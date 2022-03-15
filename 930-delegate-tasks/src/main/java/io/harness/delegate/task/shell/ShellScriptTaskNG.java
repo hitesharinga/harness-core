@@ -17,6 +17,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.utils.SshUtils;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.logging.CommandExecutionStatus;
@@ -78,7 +79,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
           .build();
     } else {
       try {
-        SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
+        SshSessionConfig sshSessionConfig = SshUtils.generateSshSessionConfig(sshSessionConfigMapper, taskParameters, COMMAND_UNIT);
         ScriptSshExecutor executor =
             sshExecutorFactoryNG.getExecutor(sshSessionConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
         ExecuteCommandResponse executeCommandResponse =
@@ -116,18 +117,6 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
       default:
         return "";
     }
-  }
-
-  private SshSessionConfig getSshSessionConfig(ShellScriptTaskParametersNG taskParameters) {
-    SshSessionConfig sshSessionConfig = sshSessionConfigMapper.getSSHSessionConfig(
-        taskParameters.getSshKeySpecDTO(), taskParameters.getEncryptionDetails());
-
-    sshSessionConfig.setAccountId(taskParameters.getAccountId());
-    sshSessionConfig.setExecutionId(taskParameters.getExecutionId());
-    sshSessionConfig.setHost(taskParameters.getHost());
-    sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
-    sshSessionConfig.setCommandUnitName(COMMAND_UNIT);
-    return sshSessionConfig;
   }
 
   private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {

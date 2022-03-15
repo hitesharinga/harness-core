@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Value
 @OwnedBy(CDP)
-public class SshTaskParameters extends CommandTaskParameters {
+public class SshTaskParameters extends CommandTaskParameters implements SshSessionConfigMapperFields {
   SSHKeySpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
 }
