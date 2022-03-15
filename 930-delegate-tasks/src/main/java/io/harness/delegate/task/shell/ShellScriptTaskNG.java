@@ -79,7 +79,8 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
           .build();
     } else {
       try {
-        SshSessionConfig sshSessionConfig = SshUtils.generateSshSessionConfig(sshSessionConfigMapper, taskParameters, COMMAND_UNIT);
+        SshSessionConfig sshSessionConfig =
+            SshUtils.generateSshSessionConfig(sshSessionConfigMapper, taskParameters, COMMAND_UNIT);
         ScriptSshExecutor executor =
             sshExecutorFactoryNG.getExecutor(sshSessionConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
         ExecuteCommandResponse executeCommandResponse =
