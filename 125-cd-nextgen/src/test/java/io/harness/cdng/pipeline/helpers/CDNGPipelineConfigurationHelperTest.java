@@ -45,6 +45,6 @@ public class CDNGPipelineConfigurationHelperTest extends CategoryTest {
     StepCategory result = cdngPipelineConfigurationHelper.getSteps(ServiceDefinitionType.KUBERNETES);
     assertThat(result.getName()).isEqualTo(CDNGPipelineConfigurationHelper.LIBRARY);
     assertThat(result.getStepsData()).isEqualTo(new ArrayList<>());
-    assertThat(result.getStepCategories().size()).isEqualTo(6);
+    assertThat(result.getStepCategories().size()).isEqualTo(7);
   }
 }

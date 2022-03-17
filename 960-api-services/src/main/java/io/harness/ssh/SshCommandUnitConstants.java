@@ -5,9 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.shell;
+package io.harness.ssh;
 
-import lombok.experimental.SuperBuilder;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-@SuperBuilder
-public class WinrmTaskParameters extends CommandTaskParameters {}
+import io.harness.annotations.dev.OwnedBy;
+
+@OwnedBy(CDP)
+public interface SshCommandUnitConstants {
+  String Init = "Initialize";
+  String Exec = "Exec";
+  String Cleanup = "Cleanup";
+}

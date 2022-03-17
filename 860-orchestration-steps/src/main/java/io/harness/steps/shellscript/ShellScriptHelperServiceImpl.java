@@ -170,17 +170,18 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public String getWorkingDirectory(@Nonnull ShellScriptStepParameters stepParameters, @Nonnull ScriptType scriptType) {
-    if (stepParameters.getExecutionTarget() != null && stepParameters.getExecutionTarget().getWorkingDirectory() != null
-        && EmptyPredicate.isNotEmpty(stepParameters.getExecutionTarget().getWorkingDirectory().getValue())) {
-      return stepParameters.getExecutionTarget().getWorkingDirectory().getValue();
+  public String getWorkingDirectory(
+      @Nonnull ExecutionTarget executionTarget, @Nonnull ScriptType scriptType, boolean onDelegate) {
+    if (executionTarget != null && executionTarget.getWorkingDirectory() != null
+        && EmptyPredicate.isNotEmpty(executionTarget.getWorkingDirectory().getValue())) {
+      return executionTarget.getWorkingDirectory().getValue();
     }
     String commandPath = null;
     if (scriptType == ScriptType.BASH) {
       commandPath = "/tmp";
     } else if (scriptType == ScriptType.POWERSHELL) {
       commandPath = "%TEMP%";
-      if (stepParameters.onDelegate.getValue()) {
+      if (onDelegate) {
         commandPath = "/tmp";
       }
     }
@@ -207,7 +208,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .outputVars(shellScriptHelperService.getOutputVars(shellScriptStepParameters.getOutputVariables()))
         .script(shellScript)
         .scriptType(scriptType)
-        .workingDirectory(shellScriptHelperService.getWorkingDirectory(shellScriptStepParameters, scriptType))
+        .workingDirectory(shellScriptHelperService.getWorkingDirectory(shellScriptStepParameters.getExecutionTarget(),
+            scriptType, shellScriptStepParameters.onDelegate.getValue()))
         .build();
   }
 

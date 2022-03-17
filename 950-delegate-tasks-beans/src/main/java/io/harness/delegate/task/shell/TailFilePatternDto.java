@@ -7,7 +7,20 @@
 
 package io.harness.delegate.task.shell;
 
-import lombok.experimental.SuperBuilder;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-@SuperBuilder
-public class WinrmTaskParameters extends CommandTaskParameters {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@OwnedBy(HarnessTeam.CDP)
+public class TailFilePatternDto {
+  String tailFile;
+  String tailPattern;
+}

@@ -102,4 +102,5 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
   public static String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
   public static final String INFRASTRUCTURE = "infrastructure";
+  public static String EXECUTE_COMMAND = "ExecuteCommand";
 }

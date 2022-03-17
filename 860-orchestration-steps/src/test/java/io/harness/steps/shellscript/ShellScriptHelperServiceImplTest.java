@@ -259,16 +259,22 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   public void testGetWorkingDirectory() {
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().onDelegate(ParameterField.createValueField(true)).build();
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.BASH)).isEqualTo("/tmp");
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.POWERSHELL))
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   stepParameters.getExecutionTarget(), ScriptType.BASH, stepParameters.onDelegate.getValue()))
+        .isEqualTo("/tmp");
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   stepParameters.getExecutionTarget(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
         .isEqualTo("/tmp");
     stepParameters.setOnDelegate(ParameterField.createValueField(false));
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.POWERSHELL))
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   stepParameters.getExecutionTarget(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
         .isEqualTo("%TEMP%");
 
     stepParameters.setExecutionTarget(
         ExecutionTarget.builder().workingDirectory(ParameterField.createValueField("dir")).build());
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.BASH)).isEqualTo("dir");
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   stepParameters.getExecutionTarget(), ScriptType.BASH, stepParameters.onDelegate.getValue()))
+        .isEqualTo("dir");
   }
 
   @Test
@@ -299,7 +305,10 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script);
     doReturn(taskEnvVariables).when(shellScriptHelperService).getEnvironmentVariables(inputVars);
     doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars);
-    doReturn("/tmp").when(shellScriptHelperService).getWorkingDirectory(stepParameters, ScriptType.BASH);
+    doReturn("/tmp")
+        .when(shellScriptHelperService)
+        .getWorkingDirectory(
+            stepParameters.getExecutionTarget(), ScriptType.BASH, stepParameters.onDelegate.getValue());
 
     ShellScriptTaskParametersNG taskParams =
         shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters);

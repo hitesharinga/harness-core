@@ -61,6 +61,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
+import io.harness.steps.shellscript.ShellScriptHelperService;
+import io.harness.steps.shellscript.ShellScriptHelperServiceImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -113,5 +115,6 @@ public class NGModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
         .to(EnvironmentGroupFilterPropertiesMapper.class);
+    bind(ShellScriptHelperService.class).to(ShellScriptHelperServiceImpl.class);
   }
 }

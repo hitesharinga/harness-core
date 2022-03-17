@@ -115,7 +115,13 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK)
   SERVERLESS_AWS_LAMBDA_ROLLBACK("Serverless Aws Lambda Rollback",
       Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK);
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK),
+  // ssh steps
+  // TODO Remove K8S service def type after testing
+  @JsonProperty(StepSpecTypeConstants.EXECUTE_COMMAND)
+  EXECUTE_COMMAND("Execute Command", Arrays.asList(ServiceDefinitionType.KUBERNETES, ServiceDefinitionType.SSH),
+      "Execute Command", StepSpecTypeConstants.EXECUTE_COMMAND);
+
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

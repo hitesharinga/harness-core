@@ -7,16 +7,21 @@
 
 package io.harness.delegate.task.shell;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
-public interface SshSessionConfigMapperFields {
-  String getAccountId();
-  String getExecutionId();
-  String getHost();
-  String getWorkingDirectory();
-  SSHKeySpecDTO getSshKeySpecDTO();
-  List<EncryptedDataDetail> getEncryptionDetails();
+@SuperBuilder
+@Value
+@OwnedBy(CDP)
+public class SshCommandTaskParameters extends CommandTaskParameters implements SshSessionConfigMapperFields {
+  SSHKeySpecDTO sshKeySpecDTO;
+  List<EncryptedDataDetail> encryptionDetails;
+  List<TailFilePatternDto> tailFilePatterns;
 }

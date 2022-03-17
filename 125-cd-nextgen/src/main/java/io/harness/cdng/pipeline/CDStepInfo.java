@@ -31,6 +31,7 @@ import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
+import io.harness.cdng.ssh.ExecuteCommandStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -48,7 +49,7 @@ import io.swagger.annotations.ApiModel;
         TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class,
         HelmDeployStepInfo.class, HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
         CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
-        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class})
+        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, ExecuteCommandStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

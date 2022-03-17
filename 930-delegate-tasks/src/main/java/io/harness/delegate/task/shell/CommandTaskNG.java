@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -48,10 +48,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    if (parameters instanceof SshTaskParameters) {
+    if (parameters instanceof SshCommandTaskParameters) {
       // TODO ssh logic
+      log.info("Executing ssh command delegate task.");
     } else if (parameters instanceof WinrmTaskParameters) {
-      // TODO winrm logic
+      throw new NotImplementedException("Not implemented");
     } else {
       throw new IllegalArgumentException(String.format("Invalid parameters type provide %s", parameters.getClass()));
     }

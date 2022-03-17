@@ -27,6 +27,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ExecuteCommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
@@ -61,6 +62,7 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.SshVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationDeleteStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationRollbackStepVariableCreator;
@@ -139,6 +141,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
     planCreators.add(new CloudformationDeleteStackStepPlanCreator());
     planCreators.add(new CloudformationRollbackStackStepPlanCreator());
+    planCreators.add(new ExecuteCommandStepPlanCreator());
     planCreators.add(new SpecNodePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -180,6 +183,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new CloudformationCreateStepVariableCreator());
     variableCreators.add(new CloudformationDeleteStepVariableCreator());
     variableCreators.add(new CloudformationRollbackStepVariableCreator());
+    variableCreators.add(new SshVariableCreator());
     return variableCreators;
   }
 
@@ -315,6 +319,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.NG_NATIVE_HELM.name())
             .build();
 
+    StepInfo executeCommand =
+        StepInfo.newBuilder()
+            .setName("Execute Command")
+            .setType(StepSpecTypeConstants.EXECUTE_COMMAND)
+            //                    .setFeatureRestrictionName(FeatureRestrictionName.SSH.name())
+            .setFeatureFlag(FeatureName.SSH_NG.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())
+            .build();
+
     StepInfo serverlessDeploy =
         StepInfo.newBuilder()
             .setName("Serverless Lambda Deploy")
@@ -385,6 +398,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(createStack);
     stepInfos.add(deleteStack);
     stepInfos.add(rollbackStack);
+    stepInfos.add(executeCommand);
     return stepInfos;
   }
 }
