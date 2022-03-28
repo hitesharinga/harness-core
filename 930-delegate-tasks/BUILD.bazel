@@ -56,6 +56,7 @@ java_library(
         "@maven//:io_netty_netty_all",
         "@maven//:org_apache_commons_commons_email",
         "@maven//:org_jooq_joor",
+        "@maven//:io_dropwizard_dropwizard_views_freemarker",
         "@maven//:xerces_xercesImpl",
     ],
 )

@@ -21,6 +21,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
 public class TailFilePatternDto {
-  String tailFile;
-  String tailPattern;
+  String filePath;
+  String pattern;
 }

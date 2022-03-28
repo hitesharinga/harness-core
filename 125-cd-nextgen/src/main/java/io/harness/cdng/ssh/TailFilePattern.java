@@ -7,7 +7,6 @@
 
 package io.harness.cdng.ssh;
 
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -16,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,6 +23,6 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.ssh.TailFilePattern")
 public class TailFilePattern {
-  @ApiModelProperty(dataType = STRING_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<String> tailFile;
-  @ApiModelProperty(dataType = STRING_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<String> tailPattern;
+  @YamlSchemaTypes({string}) ParameterField<String> tailFile;
+  @YamlSchemaTypes({string}) ParameterField<String> tailPattern;
 }

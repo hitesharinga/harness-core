@@ -15,8 +15,10 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.shell.ScriptType;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.AccessLevel;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -30,7 +32,7 @@ public abstract class CommandTaskParameters implements TaskParameters {
   String accountId;
   String executionId;
   String workingDirectory;
-  @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables;
+  @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
   ScriptType scriptType;
   String host;
   boolean executeOnDelegate;

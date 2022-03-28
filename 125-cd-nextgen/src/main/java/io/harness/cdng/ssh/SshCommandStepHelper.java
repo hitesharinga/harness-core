@@ -78,8 +78,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .stream()
         .map(it
             -> TailFilePatternDto.builder()
-                   .tailFile(getParameterFieldValue(it.getTailFile()))
-                   .tailPattern(getParameterFieldValue(it.getTailPattern()))
+                   .filePath(getParameterFieldValue(it.getTailFile()))
+                   .pattern(getParameterFieldValue(it.getTailPattern()))
                    .build())
         .collect(Collectors.toList());
   }
