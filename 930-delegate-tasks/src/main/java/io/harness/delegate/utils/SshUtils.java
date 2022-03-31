@@ -7,6 +7,8 @@
 
 package io.harness.delegate.utils;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.task.shell.SshSessionConfigMapperFields;
 import io.harness.shell.SshSessionConfig;
@@ -14,6 +16,7 @@ import io.harness.shell.SshSessionConfig;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+@OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SshUtils {
   public static SshSessionConfig generateSshSessionConfig(
