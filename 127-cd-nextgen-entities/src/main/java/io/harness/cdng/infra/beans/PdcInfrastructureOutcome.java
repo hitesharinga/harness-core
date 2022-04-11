@@ -40,4 +40,8 @@ public class PdcInfrastructureOutcome implements InfrastructureOutcome {
   public String getKind() {
     return InfrastructureKind.PDC;
   }
+
+  public boolean useInfrastructureHosts() {
+    return false;
+  }
 }

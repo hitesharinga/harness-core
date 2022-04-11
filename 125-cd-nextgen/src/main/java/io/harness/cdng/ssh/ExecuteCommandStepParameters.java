@@ -13,11 +13,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.shellscript.ExecutionTarget;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,10 +31,13 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ExecuteCommandStepParameters")
 @RecasterAlias("io.harness.cdng.ssh.ExecuteCommandStepParameters")
 public class ExecuteCommandStepParameters extends ExecuteCommandBaseStepInfo implements SshSpecParameters {
+  Map<String, Object> environmentVariables;
+
   @Builder(builderMethodName = "infoBuilder")
-  public ExecuteCommandStepParameters(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
-      List<TailFilePattern> tailFiles, ParameterField<Boolean> onDelegate,
-                                      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(shell, source, executionTarget, tailFiles, onDelegate, delegateSelectors);
+  public ExecuteCommandStepParameters(ShellType shell, ShellScriptSourceWrapper source, List<TailFilePattern> tailFiles,
+                                      ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                                      ParameterField<String> workingDirectory, Map<String, Object> environmentVariables) {
+    super(shell, source, tailFiles, onDelegate, delegateSelectors, workingDirectory);
+    this.environmentVariables = environmentVariables;
   }
 }

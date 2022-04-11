@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
@@ -32,6 +33,7 @@ import io.harness.ssh.SshCommandUnitConstants;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -88,6 +90,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
         sshCleanupCommandHandler.cleanup(parameters, cleanupExecutor);
       } catch (Exception e) {
         log.error("Failed to cleanup ssh", e);
+      } finally {
+        List<String> hosts = parameters.getSshInfraDelegateConfig().getHosts();
+        if (!parameters.executeOnDelegate && isNotEmpty(hosts)) {
+          SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), hosts.get(0));
+        }
       }
 
       return CommandTaskResponse.builder()
@@ -99,15 +106,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
 
     } catch (Exception e) {
       log.error("Bash Script Failed to execute.", e);
-      return ShellScriptTaskResponseNG.builder()
+      return CommandTaskResponse.builder()
           .status(CommandExecutionStatus.FAILURE)
           .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
-    } finally {
-      if (!parameters.executeOnDelegate) {
-        SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
-      }
     }
   }
 

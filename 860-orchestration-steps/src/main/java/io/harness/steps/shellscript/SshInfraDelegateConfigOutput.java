@@ -5,21 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.shell;
+package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
-import java.util.List;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 @Value
+@Builder
 @OwnedBy(CDP)
-public class SshCommandTaskParameters extends CommandTaskParameters {
+@RecasterAlias("io.harness.steps.shellscript.SshInfraDelegateConfigOutput")
+public class SshInfraDelegateConfigOutput implements ExecutionSweepingOutput {
   SshInfraDelegateConfig sshInfraDelegateConfig;
-  List<TailFilePatternDto> tailFilePatterns;
 }

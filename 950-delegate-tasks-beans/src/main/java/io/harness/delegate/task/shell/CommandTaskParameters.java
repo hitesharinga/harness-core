@@ -34,6 +34,5 @@ public abstract class CommandTaskParameters implements TaskParameters {
   String workingDirectory;
   @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
   ScriptType scriptType;
-  String host;
   boolean executeOnDelegate;
 }

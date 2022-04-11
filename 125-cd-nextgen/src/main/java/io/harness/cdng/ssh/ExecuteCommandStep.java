@@ -21,7 +21,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollback;
+import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -41,7 +41,7 @@ import com.google.inject.Inject;
 import java.util.List;
 
 @OwnedBy(CDP)
-public class ExecuteCommandStep extends TaskExecutableWithRollback<CommandTaskResponse> {
+public class ExecuteCommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.EXECUTE_COMMAND.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -52,12 +52,17 @@ public class ExecuteCommandStep extends TaskExecutableWithRollback<CommandTaskRe
   @Inject private SshCommandStepHelper sshCommandStepHelper;
 
   @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // Noop
+  }
+
+  @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
   }
 
   @Override
-  public TaskRequest obtainTask(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     ExecuteCommandStepParameters executeCommandStepParameters = (ExecuteCommandStepParameters) stepParameters.getSpec();
 
@@ -79,7 +84,7 @@ public class ExecuteCommandStep extends TaskExecutableWithRollback<CommandTaskRe
   }
 
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandTaskResponse taskResponse = responseDataSupplier.get();

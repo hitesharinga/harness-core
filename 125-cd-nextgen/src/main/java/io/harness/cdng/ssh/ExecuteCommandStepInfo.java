@@ -18,11 +18,12 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.shellscript.ExecutionTarget;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -42,11 +43,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("executeCommandStepInfo")
 @RecasterAlias("io.harness.cdng.ssh.ExecuteCommandStepInfo")
 public class ExecuteCommandStepInfo extends ExecuteCommandBaseStepInfo implements CDStepInfo, Visitable {
+  List<NGVariable> environmentVariables;
+
   @Builder(builderMethodName = "infoBuilder")
-  public ExecuteCommandStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
-      List<TailFilePattern> tailFiles, ParameterField<Boolean> onDelegate,
-                                ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(shell, source, executionTarget, tailFiles, onDelegate, delegateSelectors);
+  public ExecuteCommandStepInfo(ShellType shell, ShellScriptSourceWrapper source, List<TailFilePattern> tailFiles,
+                                ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                                ParameterField<String> workingDirectory, List<NGVariable> environmentVariables) {
+    super(shell, source, tailFiles, onDelegate, delegateSelectors, workingDirectory);
+    this.environmentVariables = environmentVariables;
   }
 
   @Override
@@ -64,12 +68,13 @@ public class ExecuteCommandStepInfo extends ExecuteCommandBaseStepInfo implement
   @Override
   public SpecParameters getSpecParameters() {
     return ExecuteCommandStepParameters.infoBuilder()
-        .executionTarget(getExecutionTarget())
         .onDelegate(getOnDelegate())
         .shell(getShell())
         .source(getSource())
         .tailFiles(getTailFiles())
         .delegateSelectors(getDelegateSelectors())
+        .workingDirectory(getWorkingDirectory())
+        .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
         .build();
   }
 

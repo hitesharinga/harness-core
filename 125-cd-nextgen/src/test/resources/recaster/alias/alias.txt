@@ -106,6 +106,7 @@ io.harness.steps.approval.step.jira.beans.CriteriaSpecWrapper
 io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping

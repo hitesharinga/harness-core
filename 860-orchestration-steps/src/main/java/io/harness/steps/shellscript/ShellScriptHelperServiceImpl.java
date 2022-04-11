@@ -171,10 +171,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
 
   @Override
   public String getWorkingDirectory(
-      @Nonnull ExecutionTarget executionTarget, @Nonnull ScriptType scriptType, boolean onDelegate) {
-    if (executionTarget != null && executionTarget.getWorkingDirectory() != null
-        && EmptyPredicate.isNotEmpty(executionTarget.getWorkingDirectory().getValue())) {
-      return executionTarget.getWorkingDirectory().getValue();
+      ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate) {
+    if (workingDirectory != null && EmptyPredicate.isNotEmpty(workingDirectory.getValue())) {
+      return workingDirectory.getValue();
     }
     String commandPath = null;
     if (scriptType == ScriptType.BASH) {
@@ -199,7 +198,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
     shellScriptHelperService.prepareTaskParametersForExecutionTarget(
         ambiance, shellScriptStepParameters, taskParametersNGBuilder);
-
+    ParameterField<String> workingDirectory = (shellScriptStepParameters.getExecutionTarget() != null)
+        ? shellScriptStepParameters.getExecutionTarget().getWorkingDirectory()
+        : ParameterField.ofNull();
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
         .environmentVariables(
@@ -208,8 +209,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .outputVars(shellScriptHelperService.getOutputVars(shellScriptStepParameters.getOutputVariables()))
         .script(shellScript)
         .scriptType(scriptType)
-        .workingDirectory(shellScriptHelperService.getWorkingDirectory(shellScriptStepParameters.getExecutionTarget(),
-            scriptType, shellScriptStepParameters.onDelegate.getValue()))
+        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
+            workingDirectory, scriptType, shellScriptStepParameters.onDelegate.getValue()))
         .build();
   }
 

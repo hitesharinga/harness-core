@@ -7,16 +7,18 @@
 
 package io.harness.delegate.utils;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
+import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.SshSessionConfigMapperFields;
 import io.harness.shell.SshSessionConfig;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SshUtils {
   public static SshSessionConfig generateSshSessionConfig(
@@ -29,6 +31,21 @@ public final class SshUtils {
     sshSessionConfig.setHost(fields.getHost());
     sshSessionConfig.setWorkingDirectory(fields.getWorkingDirectory());
     sshSessionConfig.setCommandUnitName(commandUnit);
+    return sshSessionConfig;
+  }
+
+  public static SshSessionConfig generateSshSessionConfig(
+      SshSessionConfigMapper sshSessionConfigMapper, SshCommandTaskParameters taskParameters, String commandUnit) {
+    SshSessionConfig sshSessionConfig =
+        sshSessionConfigMapper.getSSHSessionConfig(taskParameters.getSshInfraDelegateConfig().getSshKeySpecDto(),
+            taskParameters.getSshInfraDelegateConfig().getEncryptionDataDetails());
+
+    sshSessionConfig.setAccountId(taskParameters.getAccountId());
+    sshSessionConfig.setExecutionId(taskParameters.getExecutionId());
+    sshSessionConfig.setHost(taskParameters.getSshInfraDelegateConfig().getHosts().get(0));
+    sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
+    sshSessionConfig.setCommandUnitName(commandUnit);
+
     return sshSessionConfig;
   }
 }

@@ -24,6 +24,8 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -46,6 +48,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -56,6 +59,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -64,6 +68,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -73,6 +78,8 @@ import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 
 import com.google.inject.name.Named;
 import java.util.Arrays;
@@ -84,6 +91,7 @@ import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
@@ -149,10 +157,53 @@ public class InfrastructureStepTest extends CategoryTest {
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
-        .thenReturn(ServiceStepOutcome.builder().build());
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(k8sStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
 
     infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+
+    ArgumentCaptor<K8sInfraDelegateConfigOutput> k8sConfigOutputCaptor =
+        ArgumentCaptor.forClass(K8sInfraDelegateConfigOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            k8sConfigOutputCaptor.capture(), eq(StepOutcomeGroup.STAGE.name()));
+    K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput = k8sConfigOutputCaptor.getValue();
+    assertThat(k8sInfraDelegateConfigOutput).isNotNull();
+    assertThat(k8sInfraDelegateConfigOutput.getK8sInfraDelegateConfig()).isEqualTo(k8sInfraDelegateConfig);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testExecSyncAfterRbacWithPdcInfra() {
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
+
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = PdcSshInfraDelegateConfig.builder().build();
+    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
+                                            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+                                            .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .build();
+
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance)).thenReturn(iLogStreamingStepClient);
+    doNothing().when(iLogStreamingStepClient).openStream(any());
+
+    when(executionSweepingOutputService.resolve(
+             any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
+        .thenReturn(EnvironmentOutcome.builder().build());
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(k8sStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
+
+    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+
+    ArgumentCaptor<SshInfraDelegateConfigOutput> pdcConfigOutputCaptor =
+        ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            pdcConfigOutputCaptor.capture(), eq(StepOutcomeGroup.STAGE.name()));
+    SshInfraDelegateConfigOutput k8sInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
+    assertThat(k8sInfraDelegateConfigOutput).isNotNull();
+    assertThat(k8sInfraDelegateConfigOutput.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
   }
 
   @Test
