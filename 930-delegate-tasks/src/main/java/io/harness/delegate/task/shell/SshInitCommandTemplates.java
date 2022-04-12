@@ -10,7 +10,7 @@ package io.harness.delegate.task.shell;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.utils.LazyInit;
+import io.harness.utils.LazyInitHelper;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
@@ -29,7 +29,7 @@ public class SshInitCommandTemplates {
   private static volatile boolean initV2;
 
   public static Template getTemplate(String templateName) {
-    LazyInit.apply(SshInitCommandTemplates.class, () -> initV2 == false, SshInitCommandTemplates::initCfgV2);
+    LazyInitHelper.apply(SshInitCommandTemplates.class, () -> initV2, SshInitCommandTemplates::initCfgV2);
     return getTemplateFromConfig(templateName);
   }
 

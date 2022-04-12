@@ -12,7 +12,7 @@ import io.harness.utils.function.VoidSupplier;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-public class LazyInit {
+public class LazyInitHelper {
   /**
    *
    * @param lock Object - lock object
