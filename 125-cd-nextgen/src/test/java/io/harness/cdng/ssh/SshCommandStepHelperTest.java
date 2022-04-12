@@ -106,7 +106,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
                                          .tailFile(ParameterField.createValueField("nohup.out"))
                                          .tailPattern(ParameterField.createValueField("*Successfull"))
                                          .build()))
-            .delegateSelectors(ParameterField.createValueField(Arrays.asList(new TaskSelectorYaml("delegate-selector"))))
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(new TaskSelectorYaml("ssh-delegate"))))
             .onDelegate(ParameterField.createValueField(false))
             .source(
                 ShellScriptSourceWrapper.builder()

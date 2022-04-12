@@ -29,7 +29,7 @@ public class SshInitCommandTemplates {
   private static volatile boolean initV2;
 
   public static Template getTemplate(String templateName) {
-    LazyInitHelper.apply(SshInitCommandTemplates.class, () -> initV2, SshInitCommandTemplates::initCfgV2);
+    LazyInitHelper.apply(SshInitCommandTemplates.class, () -> !initV2, SshInitCommandTemplates::initCfgV2);
     return getTemplateFromConfig(templateName);
   }
 
