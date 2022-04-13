@@ -95,7 +95,7 @@ public class SshEntityHelper {
 
     private SSHKeySpecDTO getSshKeySpecDto(PdcInfrastructureOutcome pdcDirectInfrastructure,
                                             Ambiance ambiance) {
-        String sshKeyRef = getSshKeyRef(pdcDirectInfrastructure);
+        String sshKeyRef = pdcDirectInfrastructure.getCredentialsRef();
         if (isEmpty(sshKeyRef)) {
             throw new InvalidRequestException("Missing SSH key for configured host(s)");
         }
@@ -112,11 +112,6 @@ public class SshEntityHelper {
         SecretDTOV2 secret = secretResponseWrapper.getSecret();
 
         return (SSHKeySpecDTO) secret.getSpec();
-    }
-
-    private String getSshKeyRef(
-            PdcInfrastructureOutcome pdcDirectInfrastructure) {
-        return pdcDirectInfrastructure.getCredentialsRef();
     }
 
     private List<EncryptedDataDetail> getEncryptionDataDetails(NGAccess ngAccess, SSHKeySpecDTO sshKeySpecDto) {
