@@ -267,12 +267,11 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(stepOutcome)
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(VM_DETAILS_OUTCOME)
-                  .group(StepOutcomeGroup.STAGE.name())
-                  .outcome(VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress()).build())
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(VM_DETAILS_OUTCOME)
+                           .group(StepOutcomeGroup.STAGE.name())
+                           .outcome(getVmDetailsOutcome(vmTaskExecutionResponse))
+                           .build())
           .build();
     } else {
       log.error("VM initialize step execution finished with status [{}] and response [{}]",
@@ -284,6 +283,17 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       }
       return stepResponseBuilder.build();
     }
+  }
+
+  private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
+    VmDetailsOutcome.VmDetailsOutcomeBuilder builder =
+        VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
+        && isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName())) {
+      return builder.build();
+    }
+
+    return builder.delegateHostName(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName()).build();
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {

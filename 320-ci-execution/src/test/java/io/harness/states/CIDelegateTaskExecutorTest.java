@@ -29,6 +29,7 @@ import io.harness.rule.Owner;
 
 import java.time.Duration;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.function.Supplier;
 import org.junit.Test;
@@ -84,6 +85,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
     when(delegateServiceGrpcClient.submitAsyncTask(eq(expectedDelegateTaskRequest), any(), any())).thenReturn(TASK_ID);
 
     String taskId = ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>());
+
     assertThat(taskId).isEqualTo(TASK_ID);
   }
 
@@ -108,6 +110,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
         .thenReturn(TASK_ID);
 
     String taskId = ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>());
+
     assertThat(taskId).isEqualTo(TASK_ID);
   }
 
