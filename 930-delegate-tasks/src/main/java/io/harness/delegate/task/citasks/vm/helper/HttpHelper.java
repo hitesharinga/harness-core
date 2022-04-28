@@ -21,9 +21,13 @@ import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.network.Http;
+import io.harness.threading.Sleeper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -41,7 +45,7 @@ public class HttpHelper {
   private final int MAX_ATTEMPTS = 3;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int DELETION_MAX_ATTEMPTS = 15;
-
+  @Inject private Sleeper sleeper;
   public RunnerRestClient getRunnerClient(int timeoutInSecs) {
     String runnerUrl = getRunnerUrl();
     Retrofit retrofit = new Retrofit.Builder()
@@ -82,7 +86,35 @@ public class HttpHelper {
   public Response<PoolOwnerStepResponse> isPoolOwner(String poolId) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed to check for pool_owner; attempt: {}",
         "Failing to check for pool_owner after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).poolOwner(poolId).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).poolOwner(poolId, null).execute());
+  }
+
+  public boolean isPoolOwnerWithStageId(String poolId, String stageId) {
+    Instant startTime = Instant.now();
+    Instant currTime = startTime;
+    int maxWaitTime = 60;
+    int count = 1;
+    while (Duration.between(startTime, currTime).getSeconds() < maxWaitTime) {
+      try {
+        Response<PoolOwnerStepResponse> response = getRunnerClient(2).poolOwner(poolId, stageId).execute();
+        if (response.isSuccessful() && response.body().isOwner()) {
+          return true;
+        } else {
+          log.info("Failing to check for pool_owner after retrying {} times", count);
+        }
+      } catch (IOException ex) {
+        log.info("Failed to find pool owner after retrying {} times: {}", count, ex.getMessage());
+      }
+
+      try {
+        sleeper.sleep(RETRY_SLEEP_DURATION.toMillis());
+      } catch (InterruptedException ex) {
+        log.warn("failed to sleep on pool owner call", ex);
+      }
+      currTime = Instant.now();
+      count++;
+    }
+    return false;
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
