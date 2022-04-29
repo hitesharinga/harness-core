@@ -13,15 +13,11 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
-import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.task.citasks.CICleanupTaskHandler;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.logging.CommandExecutionStatus;
 
 import com.google.inject.Inject;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
