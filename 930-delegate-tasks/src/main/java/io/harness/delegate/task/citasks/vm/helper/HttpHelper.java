@@ -99,7 +99,8 @@ public class HttpHelper {
     if (response.isSuccessful()) {
       return response;
     }
-    throw new RuntimeException(format("Failed to delete VM with stage runtime ID: %s, pool Id: %s", destroyVmRequest.getId(), destroyVmRequest.getPoolID());
+    throw new RuntimeException(format("Failed to delete VM with stage runtime ID: %s, pool Id: %s",
+        destroyVmRequest.getId(), destroyVmRequest.getPoolID()));
   }
 
   public Response<PoolOwnerStepResponse> isPoolOwner(String poolId) {
