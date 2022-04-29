@@ -106,7 +106,6 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -520,7 +519,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
             .delegateSvcEndpoint(ciExecutionServiceConfig.getDelegateServiceEndpointVariableValue())
             .build();
     List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
-    return queueDelegateTask(ambiance, timeout, accountId, executor, params, taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()));
+    return queueDelegateTask(ambiance, timeout, accountId, executor, params,
+        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()));
   }
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,

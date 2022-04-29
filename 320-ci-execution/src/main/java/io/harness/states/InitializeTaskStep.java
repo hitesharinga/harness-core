@@ -30,6 +30,7 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -286,10 +287,9 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   }
 
   private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
-    VmDetailsOutcome.VmDetailsOutcomeBuilder builder =
-        VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
     if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
-        && isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName())) {
+        || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName())) {
       return builder.build();
     }
 
