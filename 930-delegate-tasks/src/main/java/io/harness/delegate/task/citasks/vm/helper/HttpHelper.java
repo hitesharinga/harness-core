@@ -12,6 +12,8 @@ import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_CO
 import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_URL;
 import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_URL_ENV;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
@@ -20,11 +22,19 @@ import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
+import io.harness.exception.PodNotFoundException;
 import io.harness.network.Http;
 import io.harness.threading.Sleeper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.util.generic.GenericKubernetesApi;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -80,7 +90,16 @@ public class HttpHelper {
   public Response<Void> cleanupStageWithRetries(DestroyVmRequest destroyVmRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicyForDeletion(
         "[Retrying failed to cleanup stage; attempt: {}", "Failing to cleanup stage after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).destroy(destroyVmRequest).execute());
+    return Failsafe.with(retryPolicy).get(() -> cleanupStage(destroyVmRequest));
+  }
+
+  public Response<Void> cleanupStage(DestroyVmRequest destroyVmRequest) throws IOException {
+    Response<Void> response = getRunnerClient(600).destroy(destroyVmRequest).execute();
+
+    if (response.isSuccessful()) {
+      return response;
+    }
+    throw new RuntimeException(format("Failed to delete VM with stage runtime ID: %s, pool Id: %s", destroyVmRequest.getId(), destroyVmRequest.getPoolID());
   }
 
   public Response<PoolOwnerStepResponse> isPoolOwner(String poolId) {
