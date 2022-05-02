@@ -33,7 +33,7 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
 
   private boolean isPoolOwner(String poolId, String stageRuntimeId) {
     if (isNotEmpty(stageRuntimeId)) {
-      return httpHelper.isPoolOwnerWithStageId(poolId, stageRuntimeId);
+      return httpHelper.isPoolOwnerWithStageIdWithRetries(poolId, stageRuntimeId);
     }
     Response<PoolOwnerStepResponse> response = httpHelper.isPoolOwner(poolId);
     boolean isOwner = false;

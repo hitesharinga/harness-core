@@ -23,13 +23,10 @@ import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.network.Http;
-import io.harness.threading.Sleeper;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -45,9 +42,11 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class HttpHelper {
   public static final MediaType APPLICATION_JSON = MediaType.parse("application/json; charset=utf-8");
   private final int MAX_ATTEMPTS = 3;
+
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int DELETION_MAX_ATTEMPTS = 15;
-  @Inject private Sleeper sleeper;
+  private final int POOL_OWNER_MAX_ATTEMPTS = 20;
+
   public RunnerRestClient getRunnerClient(int timeoutInSecs) {
     String runnerUrl = getRunnerUrl();
     Retrofit retrofit = new Retrofit.Builder()
@@ -82,15 +81,15 @@ public class HttpHelper {
   public Response<Void> cleanupStageWithRetries(DestroyVmRequest destroyVmRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicyForDeletion(
         "[Retrying failed to cleanup stage; attempt: {}", "Failing to cleanup stage after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> cleanupStage(destroyVmRequest));
+    return Failsafe.with(retryPolicy).get(() -> cleanupStage(getRunnerClient(600), destroyVmRequest));
   }
 
-  public Response<Void> cleanupStage(DestroyVmRequest destroyVmRequest) throws IOException {
-    Response<Void> response = getRunnerClient(600).destroy(destroyVmRequest).execute();
-
+  public Response<Void> cleanupStage(RunnerRestClient client, DestroyVmRequest destroyVmRequest) throws IOException {
+    Response<Void> response = client.destroy(destroyVmRequest).execute();
     if (response.isSuccessful()) {
       return response;
     }
+
     throw new RuntimeException(format("Failed to delete VM with stage runtime ID: %s, pool Id: %s",
         destroyVmRequest.getId(), destroyVmRequest.getPoolID()));
   }
@@ -101,32 +100,19 @@ public class HttpHelper {
     return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).poolOwner(poolId, null).execute());
   }
 
-  public boolean isPoolOwnerWithStageId(String poolId, String stageId) {
-    Instant startTime = Instant.now();
-    Instant currTime = startTime;
-    int maxWaitTime = 60;
-    int count = 1;
-    while (Duration.between(startTime, currTime).getSeconds() < maxWaitTime) {
-      try {
-        Response<PoolOwnerStepResponse> response = getRunnerClient(2).poolOwner(poolId, stageId).execute();
-        if (response.isSuccessful() && response.body().isOwner()) {
-          return true;
-        } else {
-          log.info("Failing to check for pool_owner after retrying {} times", count);
-        }
-      } catch (IOException ex) {
-        log.info("Failed to find pool owner after retrying {} times: {}", count, ex.getMessage());
-      }
+  public boolean isPoolOwnerWithStageIdWithRetries(String poolId, String stageId) {
+    RetryPolicy<Object> retryPolicy = getRetryPoolOwnerPolicy(
+        "[Retrying failed to check pool owner; attempt: {}", "Failing to check pool owner after retrying {} times");
+    return Failsafe.with(retryPolicy).get(() -> isPoolOwnerWithStageId(poolId, stageId));
+  }
 
-      try {
-        sleeper.sleep(RETRY_SLEEP_DURATION.toMillis());
-      } catch (InterruptedException ex) {
-        log.warn("failed to sleep on pool owner call", ex);
-      }
-      currTime = Instant.now();
-      count++;
+  public boolean isPoolOwnerWithStageId(String poolId, String stageId) throws IOException {
+    Response<PoolOwnerStepResponse> response = getRunnerClient(10).poolOwner(poolId, stageId).execute();
+    if (response.isSuccessful() && response.body().isOwner()) {
+      return true;
     }
-    return false;
+
+    throw new RuntimeException(format("failed to check pool owner for stage %s, pool %s", stageId, poolId));
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
@@ -134,6 +120,15 @@ public class HttpHelper {
         .handle(Exception.class)
         .withDelay(RETRY_SLEEP_DURATION)
         .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  private RetryPolicy<Object> getRetryPoolOwnerPolicy(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withDelay(RETRY_SLEEP_DURATION)
+        .withMaxAttempts(POOL_OWNER_MAX_ATTEMPTS)
         .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
