@@ -86,6 +86,7 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -303,6 +304,24 @@ public class DelegateAgentResource {
   public DelegateTaskPackage acquireDelegateTask(@PathParam("delegateId") String delegateId,
       @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("delegateInstanceId") String delegateInstanceId) {
+    try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
+      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
+        return null;
+      }
+      return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+    }
+  }
+
+  @DelegateAuth
+  @PUT
+  @Path("{delegateId}/tasks/{taskId}/acquire/json")
+  @Timed
+  @ExceptionMetered
+  public DelegateTaskPackage acquireDelegateTaskJson(@PathParam("delegateId") String delegateId,
+                                                 @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+                                                 @QueryParam("delegateInstanceId") String delegateInstanceId) {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {

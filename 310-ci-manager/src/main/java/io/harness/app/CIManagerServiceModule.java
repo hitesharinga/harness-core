@@ -19,15 +19,31 @@ import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.app.impl.STOYamlSchemaServiceImpl;
 import io.harness.app.intfc.CIYamlSchemaService;
 import io.harness.app.intfc.STOYamlSchemaService;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsClientImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.services.BuildNumberService;
 import io.harness.core.ci.services.BuildNumberServiceImpl;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.core.ci.services.CIOverviewDashboardServiceImpl;
+import io.harness.delegate.DelegateConfigurationServiceProvider;
+import io.harness.delegate.DelegatePropertiesServiceProvider;
+import io.harness.encryptors.CustomEncryptor;
+import io.harness.encryptors.Encryptors;
+import io.harness.encryptors.KmsEncryptor;
+import io.harness.encryptors.VaultEncryptor;
+import io.harness.encryptors.clients.AwsKmsEncryptor;
+import io.harness.encryptors.clients.GcpKmsEncryptor;
+import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.encryptors.managerproxy.ManagerCustomEncryptor;
+import io.harness.encryptors.managerproxy.ManagerKmsEncryptor;
+import io.harness.encryptors.managerproxy.ManagerVaultEncryptor;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.ff.CIFeatureFlagService;
@@ -36,6 +52,9 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
+import io.harness.helpers.docker.CICleanupStepConverter;
+import io.harness.helpers.docker.CIDockerExecuteStepConverter;
+import io.harness.helpers.docker.CIDockerInitializeStepConverter;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logserviceclient.CILogServiceClientModule;
@@ -46,11 +65,33 @@ import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
+import io.harness.secretmanagers.SecretManagerConfigService;
+import io.harness.secretmanagers.SecretsManagerRBACService;
+import io.harness.secretmanagers.SecretsManagerRBACServiceImpl;
 import io.harness.secrets.SecretNGManagerClientModule;
+import io.harness.secrets.SecretsAuditService;
+import io.harness.secrets.SecretsAuditServiceImpl;
+import io.harness.secrets.SecretsDelegateCacheHelperService;
+import io.harness.secrets.SecretsDelegateCacheHelperServiceImpl;
+import io.harness.secrets.SecretsDelegateCacheService;
+import io.harness.secrets.SecretsDelegateCacheServiceImpl;
+import io.harness.secrets.SecretsFileService;
+import io.harness.secrets.SecretsFileServiceImpl;
+import io.harness.secrets.SecretsRBACService;
+import io.harness.secrets.SecretsRBACServiceImpl;
+import io.harness.secrets.setupusage.SecretSetupUsageBuilder;
+import io.harness.secrets.setupusage.SecretSetupUsageBuilders;
+import io.harness.secrets.setupusage.builders.ConfigFileSetupUsageBuilder;
+import io.harness.secrets.setupusage.builders.SecretManagerSetupUsageBuilder;
+import io.harness.secrets.setupusage.builders.ServiceVariableSetupUsageBuilder;
+import io.harness.secrets.setupusage.builders.SettingAttributeSetupUsageBuilder;
+import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
+import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
+import io.harness.templatizedsm.RuntimeCredentialsInjector;
 import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -81,6 +122,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import software.wings.service.impl.security.EncryptionServiceImpl;
+import software.wings.service.impl.security.SecretDecryptionServiceImpl;
+import software.wings.service.intfc.security.EncryptionService;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -174,6 +218,23 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
+    bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
+    bind(EncryptionService.class).to(EncryptionServiceImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(AwsClient.class).to(AwsClientImpl.class);
+    bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
+    bind(SecretsDelegateCacheHelperService.class).to(BasicSecretCacheHelper.class);
+    binder()
+            .bind(KmsEncryptor.class)
+            .annotatedWith(Names.named(Encryptors.LOCAL_ENCRYPTOR.getName()))
+            .to(LocalEncryptor.class);
+    bind(ExecutorService.class)
+            .annotatedWith(Names.named("asyncExecutor"))
+            .toInstance(ThreadPool.create(1, 20, 5, TimeUnit.SECONDS,
+                    new ThreadFactoryBuilder()
+                            .setNameFormat("asyncExecutor-%d")
+                            .setPriority(Thread.MIN_PRIORITY)
+                            .build()));
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)

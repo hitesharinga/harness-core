@@ -18,9 +18,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8BuildJobEnvInfo.class, name = "K8")
   , @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM")
+        ,@JsonSubTypes.Type(value = DockerBuildJobInfo.class, name = "DOCKER")
 })
 public interface BuildJobEnvInfo {
-  enum Type { K8, VM }
+  enum Type { K8, VM, DOCKER }
 
   Type getType();
 }
