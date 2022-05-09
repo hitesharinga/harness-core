@@ -98,7 +98,7 @@ public class EventJobScheduler {
   }
 
   // this job runs every 1 hours "0 0 * ? * *". For debugging, run every minute "* * * ? * *"
-  @Scheduled(cron = "0 */5 * * * ?")
+  @Scheduled(cron = "0 */20 * * * ?")
   public void runCloudEfficiencyInClusterJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER, true);
   }
