@@ -62,8 +62,6 @@ public class DelegateHealthCheckTasklet implements Tasklet {
       for (String clusterId : lastReceivedTimeForClusters.keySet()) {
         if (Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime)) {
           log.info("Delegate health check failed for clusterId: {}", clusterId);
-        } else {
-          log.info("Delegate health check successful for clusterId: {}", clusterId);
         }
       }
     }
