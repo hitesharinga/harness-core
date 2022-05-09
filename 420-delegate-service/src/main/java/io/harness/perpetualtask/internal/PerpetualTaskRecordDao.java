@@ -195,11 +195,13 @@ public class PerpetualTaskRecordDao {
   public List<PerpetualTaskRecord> listValidK8sWatchPerpetualTasksForAccount(String accountId) {
     List<PerpetualTaskRecord> perpetualTaskRecords = new ArrayList<>();
 
-    Query<PerpetualTaskRecord> query =
-        persistence.createQuery(PerpetualTaskRecord.class)
-            .field(PerpetualTaskRecordKeys.accountId).equal(accountId)
-            .field(PerpetualTaskRecordKeys.perpetualTaskType).equal("K8S_WATCH")
-            .field(PerpetualTaskRecordKeys.state).notEqual(TASK_UNASSIGNED);
+    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
+                                           .field(PerpetualTaskRecordKeys.accountId)
+                                           .equal(accountId)
+                                           .field(PerpetualTaskRecordKeys.perpetualTaskType)
+                                           .equal("K8S_WATCH")
+                                           .field(PerpetualTaskRecordKeys.state)
+                                           .notEqual(TASK_UNASSIGNED);
     try (HIterator<PerpetualTaskRecord> tasksIterator = new HIterator<>(query.fetch())) {
       while (tasksIterator.hasNext()) {
         perpetualTaskRecords.add(tasksIterator.next());
