@@ -54,7 +54,7 @@ public class DelegateHealthCheckTasklet implements Tasklet {
         clusterIds.add(perpetualTask.getClientContext().getClientParams().get("clusterId"));
       }
     }
-    Instant allowedTime = startTime.minus(Duration.ofHours(DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG));
+    Instant allowedTime = startTime.minus(Duration.ofMinutes(DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG));
     for (List<String> clusterIdsBatch : Lists.partition(clusterIds, BATCH_SIZE)) {
       Map<String, Long> lastReceivedTimeForClusters =
           lastReceivedPublishedMessageDao.getLastReceivedTimeForClusters(accountId, clusterIdsBatch);
