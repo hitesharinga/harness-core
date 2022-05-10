@@ -7,7 +7,6 @@
 
 package io.harness.azure;
 
-import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -22,12 +21,14 @@ import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.network.Http;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Singleton;
 import com.microsoft.aad.adal4j.AuthenticationException;
 import com.microsoft.azure.AzureEnvironment;
@@ -39,6 +40,11 @@ import com.microsoft.rest.LogLevel;
 import com.microsoft.rest.ServiceResponseBuilder;
 import com.microsoft.rest.serializer.JacksonAdapter;
 import java.security.InvalidKeyException;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -76,12 +82,13 @@ public class AzureClient {
 
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
-      throw new InvalidRequestException("Failed to connect to Azure cluster. " + ExceptionUtils.getMessage(e), USER);
     }
+
+    return null;
   }
 
   protected void handleAzureAuthenticationException(Exception e) {
-    String message = "Authentication failed";
+    String message = null;
     Throwable e1 = e;
     while (e1.getCause() != null) {
       e1 = e1.getCause();
@@ -91,6 +98,10 @@ public class AzureClient {
       if (e1 instanceof InterruptedException) {
         message = "Failed to connect to Azure cluster. " + ExceptionUtils.getMessage(e1);
       }
+    }
+
+    if (EmptyPredicate.isEmpty(message)) {
+      message = e.getMessage();
     }
 
     throw NestedExceptionUtils.hintWithExplanationException(
@@ -143,6 +154,10 @@ public class AzureClient {
     return "Basic " + encodeBase64String(format("%s:%s", username, password).getBytes(UTF_8));
   }
 
+  protected String getAzureBearerAuthHeader(final String token) {
+    return format("Bearer %s", token);
+  }
+
   protected String buildRepositoryHostUrl(String repositoryHost) {
     return format("https://%s%s", repositoryHost, repositoryHost.endsWith("/") ? "" : "/");
   }
@@ -162,5 +177,27 @@ public class AzureClient {
         return new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
             String.valueOf(azureConfig.getKey()), azureEnvironment);
     }
+  }
+
+  protected String createClientAssertion(AzureConfig azureConfig) {
+    String certThumbprintInBase64 = AzureUtils.getCertificateThumbprintBase64Encoded(azureConfig.getCert());
+    RSAPrivateKey privateKey = AzureUtils.getPrivateKeyFromPEMFile(azureConfig.getCert());
+
+    Algorithm algorithm = Algorithm.RSA256(privateKey);
+
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("x5t", certThumbprintInBase64);
+
+    long currentTimestamp = System.currentTimeMillis();
+    return JWT.create()
+        .withHeader(headers)
+        .withAudience(format("%s%s/oauth2/v2.0/token", AzureUtils.AUTH_URL, azureConfig.getTenantId()))
+        .withIssuer(azureConfig.getClientId())
+        .withIssuedAt(new Date(currentTimestamp))
+        .withNotBefore(new Date(currentTimestamp))
+        .withExpiresAt(new Date(currentTimestamp + 10 * 60 * 1000))
+        .withJWTId(UUID.randomUUID().toString())
+        .withSubject(azureConfig.getClientId())
+        .sign(algorithm);
   }
 }

@@ -108,12 +108,16 @@ import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapBuilder;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
+import io.harness.cvng.notification.beans.ErrorBudgetRemainingPercentageConditionSpec;
+import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleDTO.NotificationRuleDTOBuilder;
 import io.harness.cvng.notification.beans.NotificationRuleType;
-import io.harness.cvng.notification.beans.SLONotificationRuleCondition;
-import io.harness.cvng.notification.beans.SLONotificationRuleCondition.SLONotificationRuleConditionSpec;
-import io.harness.cvng.notification.beans.SLONotificationRuleCondition.SLONotificationRuleConditionType;
+import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -156,7 +160,6 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO.ServiceResponseDTOBuilder;
-import io.harness.notification.channelDetails.PmsEmailChannel;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.collect.Sets;
@@ -1097,21 +1100,34 @@ public class BuilderFactory {
         .traceableType(TraceableType.VERIFICATION_TASK);
   }
 
-  public NotificationRuleDTOBuilder getNotificationRuleDTOBuilder() {
+  public NotificationRuleDTOBuilder getNotificationRuleDTOBuilder(NotificationRuleType type) {
     return NotificationRuleDTO.builder()
         .name("rule")
         .identifier("rule")
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .enabled(false)
-        .type(NotificationRuleType.SLO)
-        .conditions(Arrays.asList(SLONotificationRuleCondition.builder()
-                                      .conditionType(SLONotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
-                                      .spec(SLONotificationRuleConditionSpec.builder().threshold(10.0).build())
-                                      .build()))
-        .notificationMethod(PmsEmailChannel.builder()
-                                .recipients(Arrays.asList("test@harness.io"))
-                                .userGroups(Arrays.asList("testUserGroup"))
+        .type(type)
+        .conditions(getNotificationRuleConditions(type))
+        .notificationMethod(CVNGNotificationChannel.builder()
+                                .type(CVNGNotificationChannelType.EMAIL)
+                                .spec(CVNGEmailChannelSpec.builder()
+                                          .recipients(Arrays.asList("test@harness.io"))
+                                          .userGroups(Arrays.asList("testUserGroup"))
+                                          .build())
                                 .build());
+  }
+
+  private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {
+    if (type.equals(NotificationRuleType.SLO)) {
+      return Arrays.asList(NotificationRuleCondition.builder()
+                               .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
+                               .spec(ErrorBudgetRemainingPercentageConditionSpec.builder().threshold(10.0).build())
+                               .build());
+    } else {
+      return Arrays.asList(NotificationRuleCondition.builder()
+                               .type(NotificationRuleConditionType.HEALTH_SCORE)
+                               .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
+                               .build());
+    }
   }
 }
