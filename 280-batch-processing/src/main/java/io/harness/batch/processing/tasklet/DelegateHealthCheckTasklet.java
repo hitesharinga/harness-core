@@ -59,8 +59,9 @@ public class DelegateHealthCheckTasklet implements Tasklet {
     for (List<String> clusterIdsBatch : Lists.partition(clusterIds, BATCH_SIZE)) {
       Map<String, Long> lastReceivedTimeForClusters =
           lastReceivedPublishedMessageDao.getLastReceivedTimeForClusters(accountId, clusterIdsBatch);
-      for (String clusterId : lastReceivedTimeForClusters.keySet()) {
-        if (Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime)) {
+      for (String clusterId: clusterIdsBatch) {
+        if (!lastReceivedTimeForClusters.containsKey(clusterId) ||
+            Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime)) {
           log.info("Delegate health check failed for clusterId: {}", clusterId);
         }
       }
