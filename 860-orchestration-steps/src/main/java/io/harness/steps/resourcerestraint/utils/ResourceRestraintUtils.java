@@ -20,6 +20,7 @@ import lombok.experimental.UtilityClass;
 public class ResourceRestraintUtils {
   public String getReleaseEntityId(Ambiance ambiance, HoldingScope scope) {
     switch (scope) {
+      case PLAN:
       case PIPELINE:
         return ambiance.getPlanExecutionId();
       case STAGE:

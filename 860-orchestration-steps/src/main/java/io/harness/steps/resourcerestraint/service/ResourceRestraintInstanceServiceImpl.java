@@ -105,6 +105,7 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
     try {
       HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
       switch (scope) {
+        case PLAN:
         case PIPELINE:
           PlanExecution planExecution = planExecutionService.get(releaseEntityId);
           finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());

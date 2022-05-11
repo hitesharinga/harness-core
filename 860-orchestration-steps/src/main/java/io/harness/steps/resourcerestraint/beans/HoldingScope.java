@@ -15,7 +15,15 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.steps.resourcerestraint.beans.HoldingScope")
 public enum HoldingScope {
-  PIPELINE, // This corresponds to pipeline
+  // This is only for backward compatibility
+  // TODO : Remove this after a release
+  @Deprecated PLAN,
+
+  // This corresponds to pipeline
+  PIPELINE,
+
+  // This corresponds to stage
   STAGE,
+
   STEP_GROUP
 }
