@@ -26,7 +26,7 @@ resource "google_monitoring_alert_policy" "ce_delegate_health_monitoring_alert_p
     ((var.deployment == "qa" || var.deployment == "qa_free" || var.deployment == "stress") ? ["${local.slack_qa_channel}"] :
   ["${local.slack_dev_channel}"]))
 
-  display_name = join("_", [local.name_prefix, "ce_delayed_batch_jobs"])
+  display_name = join("_", [local.name_prefix, "ce_delegate_health_monitoring"])
   combiner     = "OR"
   conditions {
     display_name = "ce_delegate_health_monitoring"
