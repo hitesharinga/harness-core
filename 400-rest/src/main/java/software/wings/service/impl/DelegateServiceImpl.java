@@ -999,14 +999,6 @@ public class DelegateServiceImpl implements DelegateService {
         isNotEmpty(updatedDelegates) ? DELEGATES_UPDATED_RESPONSE : NO_DELEGATES_UPDATED_RESPONSE, updatedDelegates);
   }
 
-  @Override
-  public List<Delegate> obtainDelegateDetails(String accountId, List<String> delegateIds) {
-    return persistence.createQuery(Delegate.class)
-        .filter(DelegateKeys.accountId, accountId)
-        .field(DelegateKeys.uuid).in(delegateIds)
-        .asList();
-  }
-
   private Delegate updateApprovalStatePerDelegate(Delegate currentDelegate, DelegateApproval action) {
     DelegateInstanceStatus newDelegateStatus = mapApprovalActionToDelegateStatus(action);
     Type actionEventType = mapActionToEventType(action);

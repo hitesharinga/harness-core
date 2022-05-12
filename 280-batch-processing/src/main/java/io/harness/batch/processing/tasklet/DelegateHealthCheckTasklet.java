@@ -31,6 +31,8 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import software.wings.service.impl.DelegateServiceImpl;
+import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -38,7 +40,7 @@ import software.wings.service.impl.DelegateServiceImpl;
 public class DelegateHealthCheckTasklet implements Tasklet {
   @Autowired private PerpetualTaskRecordDao perpetualTaskRecordDao;
   @Autowired private LastReceivedPublishedMessageDao lastReceivedPublishedMessageDao;
-  @Autowired private DelegateServiceImpl delegateService;
+  @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
 
   private static final int BATCH_SIZE = 20;
   private static final long DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG = 90;
@@ -69,7 +71,7 @@ public class DelegateHealthCheckTasklet implements Tasklet {
       List<String> delegateIds = clusterIdsBatch.stream().map(clusterIdToDelegateIdMap::get)
           .collect(Collectors.toList());
       log.info("delegate list size: {}, delegates: {}" , delegateIds.size(), delegateIds);
-      List<Delegate> delegates = delegateService.obtainDelegateDetails(accountId, delegateIds);
+      List<Delegate> delegates = cloudToHarnessMappingService.obtainDelegateDetails(accountId, delegateIds);
       log.info("delegate details list size: {}, delegates: {}" , delegates.size(), delegates);
       Set<String> healthyDelegates = delegates.stream().filter((delegate -> isDelegateHealthy(delegate, startTime)))
           .map((Delegate::getUuid)).collect(Collectors.toSet());

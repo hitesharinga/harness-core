@@ -221,6 +221,4 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateApprovalResponse approveDelegatesUsingToken(
       String accountId, String delegateTokenName, DelegateApproval action) throws InvalidRequestException;
-
-  List<Delegate> obtainDelegateDetails(String accountId, List<String> delegateIds);
 }
