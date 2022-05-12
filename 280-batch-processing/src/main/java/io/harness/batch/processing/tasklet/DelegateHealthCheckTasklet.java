@@ -70,12 +70,11 @@ public class DelegateHealthCheckTasklet implements Tasklet {
     for (List<String> clusterIdsBatch : Lists.partition(clusterIds, BATCH_SIZE)) {
       List<String> delegateIds = clusterIdsBatch.stream().map(clusterIdToDelegateIdMap::get)
           .collect(Collectors.toList());
-      log.info("delegate list size: {}, delegates: {}" , delegateIds.size(), delegateIds);
       List<Delegate> delegates = cloudToHarnessMappingService.obtainDelegateDetails(accountId, delegateIds);
-      log.info("delegate details list size: {}, delegates: {}" , delegates.size(), delegates);
-      Set<String> healthyDelegates = delegates.stream().filter((delegate -> isDelegateHealthy(delegate, startTime)))
-          .map((Delegate::getUuid)).collect(Collectors.toSet());
-      log.info("healthy delegates list size: {}, healthy delegates: {}" , healthyDelegates.size(), healthyDelegates);
+      Set<String> healthyDelegates = delegates.stream()
+          .filter((delegate -> isDelegateHealthy(delegate, startTime)))
+          .map((Delegate::getUuid))
+          .collect(Collectors.toSet());
       Map<String, Long> lastReceivedTimeForClusters =
           lastReceivedPublishedMessageDao.getLastReceivedTimeForClusters(accountId, clusterIdsBatch);
       for (String clusterId: clusterIdsBatch) {
