@@ -244,13 +244,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.KUBERNETES_AZURE:
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
         validateExpression(k8sAzureInfrastructure.getConnectorRef(), k8sAzureInfrastructure.getNamespace(),
-            k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscription(),
+            k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscriptionId(),
             k8sAzureInfrastructure.getResourceGroup());
         break;
 
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
-        validateExpression(pdcInfrastructure.getSshKeyRef());
+        validateExpression(pdcInfrastructure.getCredentialsRef());
         requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
         break;
       default:

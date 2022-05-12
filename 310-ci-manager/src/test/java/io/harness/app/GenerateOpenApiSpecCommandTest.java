@@ -74,14 +74,14 @@ public class GenerateOpenApiSpecCommandTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void generatesOpenApiSpec() throws Exception {
+  public void shouldNotGeneratesOpenApiSpecWithoutConfigFileParameter() throws Exception {
     final boolean success = cli.run(GENERATE_OPENAPI_SPEC, TEST_OPENAPI_JSON);
     String openApiContent = openApiOutputStream.toString(UTF_8.name());
 
     SoftAssertions softly = new SoftAssertions();
-    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isTrue();
-    softly.assertThat(openApiContent).as(OPEN_API_CONTENT_DESCRIPTION).isNotEmpty();
-    softly.assertThat(stdErr.toString()).as(STDERR_DESCRIPTION).isEmpty();
+    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isFalse();
+    softly.assertThat(openApiContent).as(OPEN_API_CONTENT_DESCRIPTION).isEmpty();
+    softly.assertThat(stdErr.toString()).as(STDERR_DESCRIPTION).isNotEmpty();
     softly.assertAll();
   }
 

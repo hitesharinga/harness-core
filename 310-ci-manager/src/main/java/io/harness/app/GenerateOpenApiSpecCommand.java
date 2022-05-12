@@ -48,7 +48,7 @@ public class GenerateOpenApiSpecCommand extends ConfiguredCommand<CIManagerConfi
   @Override
   public void configure(Subparser subparser) {
     subparser.addArgument(OUTPUT_FILE_PATH).help("Absolute path to output openapi spec file");
-    subparser.addArgument(new String[] {"file"}).nargs("?").help("application configuration file");
+    subparser.addArgument(new String[] {"file"}).help("application configuration file");
   }
 
   @Override

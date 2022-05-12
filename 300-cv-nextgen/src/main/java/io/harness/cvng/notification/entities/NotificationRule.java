@@ -13,10 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.notification.channelDetails.PmsNotificationChannel;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -24,7 +24,6 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
-import java.time.Instant;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -71,21 +70,18 @@ public abstract class NotificationRule
   String identifier;
   String name;
 
-  private boolean enabled;
-  private Instant lastSuccessfullCheckTime;
   private long lastUpdatedAt;
   private long createdAt;
   private int version;
 
   NotificationRuleType type;
-  PmsNotificationChannel notificationMethod;
+  CVNGNotificationChannel notificationMethod;
 
   public abstract static class NotificationRuleUpdatableEntity<T extends NotificationRule, D extends NotificationRule>
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D notificationRule) {
       updateOperations.set(NotificationRuleKeys.identifier, notificationRule.getIdentifier())
           .set(NotificationRuleKeys.name, notificationRule.getName())
-          .set(NotificationRuleKeys.enabled, notificationRule.isEnabled())
           .set(NotificationRuleKeys.type, notificationRule.getType())
           .set(NotificationRuleKeys.notificationMethod, notificationRule.getNotificationMethod())
           .inc(NotificationRuleKeys.version);

@@ -109,13 +109,14 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   public EncryptedDataDetail getEncryptedDataDetails(SecretManager secretManager) {
     return secretManager
-        .encryptedDataDetails(
-            accountId, LdapConstants.BIND_PASSWORD_KEY, connectionSettings.getEncryptedBindPassword(), null)
+        .encryptedDataDetails(accountId, LdapConstants.BIND_PASSWORD_KEY, connectionSettings.fetchPassword(), null)
         .get();
   }
 
-  public void encryptFields(SecretManager secretManager) {
-    if (!connectionSettings.getBindPassword().equals(LdapConstants.MASKED_STRING)) {
+  public void encryptLdapInlineSecret(SecretManager secretManager) {
+    if (isNotEmpty(connectionSettings.getBindPassword())
+        && !LdapConstants.MASKED_STRING.equals(connectionSettings.getBindPassword())) {
+      connectionSettings.setPasswordType(LdapConnectionSettings.INLINE_SECRET);
       String oldEncryptedBindPassword = connectionSettings.getEncryptedBindPassword();
       if (isNotEmpty(oldEncryptedBindPassword)) {
         secretManager.deleteSecret(accountId, oldEncryptedBindPassword, new HashMap<>(), false);
@@ -128,6 +129,9 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
                                   .build();
       String encryptedBindPassword = secretManager.saveSecretText(accountId, secretText, false);
       connectionSettings.setEncryptedBindPassword(encryptedBindPassword);
+      connectionSettings.setBindPassword(LdapConstants.MASKED_STRING);
+      connectionSettings.setEncryptedBindSecret(null);
+    } else {
       connectionSettings.setBindPassword(LdapConstants.MASKED_STRING);
     }
   }

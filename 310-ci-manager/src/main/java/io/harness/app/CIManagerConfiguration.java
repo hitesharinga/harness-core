@@ -23,10 +23,12 @@ import io.harness.mongo.MongoConfig;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.bundles.assets.AssetsBundleConfiguration;
@@ -45,14 +47,18 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import javax.ws.rs.Path;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
 public class CIManagerConfiguration extends Configuration implements AssetsBundleConfiguration {
@@ -84,6 +90,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;
+  private STOServiceConfig stoServiceConfig;
   private OpaServiceConfiguration opaServerConfig;
 
   private String managerServiceSecret;
@@ -99,8 +106,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
   @JsonProperty("apiUrl") private String apiUrl;
-  @JsonProperty("hostname") String hostname = "localhost";
-  @JsonProperty("basePathPrefix") String basePathPrefix = "";
+  @JsonProperty("hostname") String hostname;
+  @JsonProperty("basePathPrefix") String basePathPrefix;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();
@@ -133,6 +140,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     return classes.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
   }
 
+  @JsonIgnore
   public OpenAPIConfiguration getOasConfig() {
     OpenAPI oas = new OpenAPI();
     Info info =
@@ -146,12 +154,12 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     oas.info(info);
     URL baseurl = null;
     try {
-      baseurl = new URL("https", builder().hostname, basePathPrefix);
+      baseurl = new URL("https", hostname, basePathPrefix);
       Server server = new Server();
       server.setUrl(baseurl.toString());
       oas.servers(Collections.singletonList(server));
     } catch (MalformedURLException e) {
-      log.error("failed to set baseurl for server, {}/{}", builder().hostname, basePathPrefix);
+      log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
     }
     Set<String> packages = getUniquePackagesContainingResources();
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(

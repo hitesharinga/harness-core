@@ -11,7 +11,10 @@ import static io.harness.ng.core.variable.VariableType.STRING;
 import static io.harness.ng.core.variable.VariableValueType.FIXED;
 import static io.harness.ng.core.variable.VariableValueType.FIXED_SET;
 import static io.harness.ng.core.variable.VariableValueType.REGEX;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.utils.PageTestUtils.getPage;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +28,13 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.entities.Organization;
+import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.events.VariableCreateEvent;
+import io.harness.ng.core.events.VariableUpdateEvent;
+import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.variable.VariableValueType;
 import io.harness.ng.core.variable.dto.StringVariableConfigDTO;
 import io.harness.ng.core.variable.dto.StringVariableConfigDTO.StringVariableConfigDTOKeys;
@@ -41,11 +51,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
@@ -58,16 +71,21 @@ public class VariableServiceImplTest extends CategoryTest {
   @Mock private VariableMapper variableMapper;
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private OutboxService outboxService;
+  @Mock private OrganizationService organizationService;
+  @Mock private ProjectService projectService;
+  @Mock private Project project;
+  @Mock Organization organization;
   private VariableServiceImpl variableService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
-  //@Captor private ArgumentCaptor<VariableCreateEvent> variableCreateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<VariableCreateEvent> variableCreateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<VariableUpdateEvent> variableUpdateEventArgumentCaptor;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.variableService =
-        new VariableServiceImpl(variableRepository, variableMapper, transactionTemplate, outboxService);
+    this.variableService = new VariableServiceImpl(
+        variableRepository, variableMapper, transactionTemplate, outboxService, projectService, organizationService);
   }
 
   @Test
@@ -170,6 +188,8 @@ public class VariableServiceImplTest extends CategoryTest {
     when(variableMapper.toVariable(accountIdentifier, variableDTO)).thenReturn(variable);
     when(variableMapper.writeDTO(variable)).thenReturn(variableDTO);
     when(variableRepository.save(variable)).thenReturn(variable);
+    when(projectService.get(accountIdentifier, orgIdentifier, projectIdentifier)).thenReturn(Optional.of(project));
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(organization));
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgumentAt(0, TransactionCallback.class)
@@ -179,9 +199,9 @@ public class VariableServiceImplTest extends CategoryTest {
     verify(variableMapper, times(1)).toVariable(accountIdentifier, variableDTO);
     verify(transactionTemplate, times(1)).execute(any());
     verify(variableRepository, times(1)).save(variable);
-    // verify(outboxService, times(1)).save(variableCreateEventArgumentCaptor.capture());
-    // VariableCreateEvent capturedVariableCreateEvent = variableCreateEventArgumentCaptor.getValue();
-    // assertEquals(variableDTO, capturedVariableCreateEvent.getVariableDTO());
+    verify(outboxService, times(1)).save(variableCreateEventArgumentCaptor.capture());
+    VariableCreateEvent capturedVariableCreateEvent = variableCreateEventArgumentCaptor.getValue();
+    assertThat(variableDTO).isEqualTo(capturedVariableCreateEvent.getVariableDTO());
   }
 
   @Test(expected = DuplicateFieldException.class)
@@ -197,6 +217,8 @@ public class VariableServiceImplTest extends CategoryTest {
     Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
     when(variableMapper.toVariable(accountIdentifier, variableDTO)).thenReturn(variable);
     when(variableRepository.save(variable)).thenThrow(new DuplicateKeyException(""));
+    when(projectService.get(accountIdentifier, orgIdentifier, projectIdentifier)).thenReturn(Optional.of(project));
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(organization));
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgumentAt(0, TransactionCallback.class)
@@ -217,6 +239,21 @@ public class VariableServiceImplTest extends CategoryTest {
                                   .orgIdentifier(orgIdentifier)
                                   .projectIdentifier(projectIdentifier)
                                   .build();
+    variableService.create(accountIdentifier, variableDTO);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testCreate_ProjectWithoutOrg() {
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String value = randomAlphabetic(10);
+    VariableDTO variableDTO = getVariableDTO(identifier, null, projectIdentifier, value);
+    Variable variable = getVariable(accountIdentifier, null, projectIdentifier, identifier, value);
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage(String.format("Project %s specified without the org Identifier", projectIdentifier));
     variableService.create(accountIdentifier, variableDTO);
   }
 
@@ -245,6 +282,90 @@ public class VariableServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testPagedListForAccountScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    Variable varA = getVariable(accountIdentifier, null, null, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, null, null, varID);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    PageResponse<VariableResponseDTO> list = variableService.list(accountIdentifier, null, null, 0, 10, null, false);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testPagedListForOrgScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    Variable varA = getVariable(accountIdentifier, orgIdentifier, null, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, null, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list =
+        variableService.list(accountIdentifier, orgIdentifier, null, 0, 10, null, false);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    System.out.println(list.getContent().get(0));
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testPagedListForProjectScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    Variable varA = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, projectIdentifier, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list =
+        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, null, false);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testPagedListForProjectScopeWithSearchTerm() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    Variable varA = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, projectIdentifier, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list =
+        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, varID, false);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(projectIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getIdentifier()).isEqualTo(varID);
+  }
+
+  @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testGet() {
@@ -265,5 +386,127 @@ public class VariableServiceImplTest extends CategoryTest {
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     verify(variableMapper, times(1)).toResponseWrapper(variable);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testUpdate() {
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String value = randomAlphabetic(10);
+    VariableDTO variableDTO = getVariableDTO(identifier, orgIdentifier, projectIdentifier, value);
+    variableDTO.setType(STRING);
+    Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    when(variableMapper.toVariable(accountIdentifier, variableDTO)).thenReturn(variable);
+    when(variableMapper.writeDTO(variable)).thenReturn(variableDTO);
+    when(variableRepository.save(variable)).thenReturn(variable);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(Optional.of(variable));
+    when(projectService.get(accountIdentifier, orgIdentifier, projectIdentifier)).thenReturn(Optional.of(project));
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(organization));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgumentAt(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
+    variableService.update(accountIdentifier, variableDTO);
+    verify(projectService, times(1)).get(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(variableMapper, times(1)).toVariable(accountIdentifier, variableDTO);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(variableRepository, times(1)).save(variable);
+    verify(outboxService, times(1)).save(variableUpdateEventArgumentCaptor.capture());
+    VariableUpdateEvent capturedVariableUpdateEvent = variableUpdateEventArgumentCaptor.getValue();
+    assertThat(variableDTO).isEqualTo(capturedVariableUpdateEvent.getNewVariableDTO());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testUpdate_changeValueType() {
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String value = randomAlphabetic(10);
+    VariableDTO variableDTO = getVariableDTO(identifier, orgIdentifier, projectIdentifier, value);
+    variableDTO.setType(STRING);
+    Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    Variable variable_edited = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    variable_edited.setValueType(REGEX);
+
+    when(variableRepository.save(variable)).thenReturn(variable);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(Optional.of(variable_edited));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgumentAt(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage("Variable Value Type cannot be changed");
+    variableService.update(accountIdentifier, variableDTO);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testUpdate_ProjectWithoutOrg() {
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String value = randomAlphabetic(10);
+    VariableDTO variableDTO = getVariableDTO(identifier, null, projectIdentifier, value);
+    variableDTO.setType(STRING);
+    Variable variable = getVariable(accountIdentifier, null, projectIdentifier, identifier, value);
+
+    when(variableRepository.save(variable)).thenReturn(variable);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             accountIdentifier, null, projectIdentifier, identifier))
+        .thenReturn(Optional.of(variable));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgumentAt(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage(String.format("Project %s specified without the org Identifier", projectIdentifier));
+    variableService.update(accountIdentifier, variableDTO);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void tesDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(5);
+    String value = randomAlphabetic(7);
+    Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Optional.of(variable));
+    variableService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    verify(variableRepository, times(1)).delete(variable);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void tesDelete_VariableNotExists() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(5);
+    String value = randomAlphabetic(7);
+    Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Optional.empty());
+    exceptionRule.expect(NotFoundException.class);
+    variableService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 }
