@@ -17,22 +17,24 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
 
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
+
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import software.wings.service.impl.DelegateServiceImpl;
-import software.wings.service.intfc.DelegateService;
-import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -68,19 +70,19 @@ public class DelegateHealthCheckTasklet implements Tasklet {
     }
     Instant allowedTime = startTime.minus(Duration.ofMinutes(DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG));
     for (List<String> clusterIdsBatch : Lists.partition(clusterIds, BATCH_SIZE)) {
-      List<String> delegateIds = clusterIdsBatch.stream().map(clusterIdToDelegateIdMap::get)
-          .collect(Collectors.toList());
+      List<String> delegateIds =
+          clusterIdsBatch.stream().map(clusterIdToDelegateIdMap::get).collect(Collectors.toList());
       List<Delegate> delegates = cloudToHarnessMappingService.obtainDelegateDetails(accountId, delegateIds);
       Set<String> healthyDelegates = delegates.stream()
-          .filter((delegate -> isDelegateHealthy(delegate, startTime)))
-          .map((Delegate::getUuid))
-          .collect(Collectors.toSet());
+                                         .filter(delegate -> isDelegateHealthy(delegate, startTime))
+                                         .map(Delegate::getUuid)
+                                         .collect(Collectors.toSet());
       Map<String, Long> lastReceivedTimeForClusters =
           lastReceivedPublishedMessageDao.getLastReceivedTimeForClusters(accountId, clusterIdsBatch);
-      for (String clusterId: clusterIdsBatch) {
-        if (healthyDelegates.contains(clusterIdToDelegateIdMap.get(clusterId)) &&
-            (!lastReceivedTimeForClusters.containsKey(clusterId) ||
-            Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime))) {
+      for (String clusterId : clusterIdsBatch) {
+        if (healthyDelegates.contains(clusterIdToDelegateIdMap.get(clusterId))
+            && (!lastReceivedTimeForClusters.containsKey(clusterId)
+                || Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime))) {
           log.info("Delegate health check failed for clusterId: {}, delegateId: {}", clusterId,
               clusterIdToDelegateIdMap.get(clusterId));
         }
@@ -90,8 +92,8 @@ public class DelegateHealthCheckTasklet implements Tasklet {
   }
 
   private boolean isDelegateHealthy(Delegate delegate, Instant startTime) {
-    return delegate.getStatus().equals(DelegateInstanceStatus.ENABLED) &&
-        Instant.ofEpochMilli(delegate.getLastHeartBeat()).isAfter(
-            startTime.minus(Duration.ofMinutes(MINUTES_FOR_HEALTHY_DELEGATE_HEARTBEAT)));
+    return delegate.getStatus().equals(DelegateInstanceStatus.ENABLED)
+        && Instant.ofEpochMilli(delegate.getLastHeartBeat())
+               .isAfter(startTime.minus(Duration.ofMinutes(MINUTES_FOR_HEALTHY_DELEGATE_HEARTBEAT)));
   }
 }
