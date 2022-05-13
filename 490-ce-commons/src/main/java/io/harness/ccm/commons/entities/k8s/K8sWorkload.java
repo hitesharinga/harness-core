@@ -13,7 +13,6 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -49,8 +48,9 @@ public final class K8sWorkload implements PersistentEntity, UuidAware, CreatedAt
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("no_dup_cluster")
+                 .name("no_dup_cluster_uid")
                  .unique(true)
+                 .field(K8sWorkloadKeys.accountId)
                  .field(K8sWorkloadKeys.clusterId)
                  .field(K8sWorkloadKeys.uid)
                  .build())
@@ -60,35 +60,12 @@ public final class K8sWorkload implements PersistentEntity, UuidAware, CreatedAt
                  .field(K8sWorkloadKeys.clusterId)
                  .field(K8sWorkloadKeys.labels)
                  .build())
-
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_clusterId_uid")
-                 .field(K8sWorkloadKeys.accountId)
-                 .field(K8sWorkloadKeys.clusterId)
-                 .field(K8sWorkloadKeys.uid)
-                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_clusterId_namespace_name")
                  .field(K8sWorkloadKeys.accountId)
                  .field(K8sWorkloadKeys.clusterId)
                  .field(K8sWorkloadKeys.namespace)
                  .field(K8sWorkloadKeys.name)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_clusterId_namespace_name_lastUpdatedAt")
-                 .field(K8sWorkloadKeys.accountId)
-                 .field(K8sWorkloadKeys.clusterId)
-                 .field(K8sWorkloadKeys.namespace)
-                 .field(K8sWorkloadKeys.name)
-                 .descSortField(K8sWorkloadKeys.lastUpdatedAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_clusterId_name_namespace_lastUpdatedAt")
-                 .field(K8sWorkloadKeys.accountId)
-                 .field(K8sWorkloadKeys.clusterId)
-                 .field(K8sWorkloadKeys.name)
-                 .field(K8sWorkloadKeys.namespace)
-                 .descSortField(K8sWorkloadKeys.lastUpdatedAt)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_name_labels")
