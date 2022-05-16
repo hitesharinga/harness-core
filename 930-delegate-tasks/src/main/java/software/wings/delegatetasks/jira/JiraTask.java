@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -27,6 +28,7 @@ import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraUserSearchResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
 
@@ -186,6 +188,41 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
 
     return JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).build();
+  }
+
+  private DelegateResponseData getUserListInfo(JiraTaskParameters parameters) {
+    URI uri = null;
+    try {
+      JiraClient jiraClient = getJiraClient(parameters);
+
+      Map<String, String> queryParams = new HashMap<>();
+      queryParams.put("query", parameters.getUserQuery());
+      queryParams.put("maxResults", "10");
+      if (EmptyPredicate.isNotEmpty(parameters.getUserQueryOffset())) {
+        queryParams.put("startAt", parameters.getUserQueryOffset());
+      }
+
+      uri = jiraClient.getRestClient().buildURI(Resource.getBaseUri() + "user/search", queryParams);
+
+      JSON response = jiraClient.getRestClient().get(uri);
+
+      JiraUserSearchResponse jiraUserSearchResponse = new JiraUserSearchResponse((JSONArray) response);
+
+      return JiraExecutionData.builder()
+          .executionStatus(ExecutionStatus.SUCCESS)
+          .userSearchList(jiraUserSearchResponse)
+          .build();
+    } catch (URISyntaxException | RestException | IOException | JiraException | RuntimeException e) {
+      String uriString = Resource.getBaseUri() == null ? "" : Resource.getBaseUri();
+      if (uri == null) {
+        uriString = uriString + "user/search";
+      }
+      String errorMessage =
+          String.format("Failed to fetch issue metadata from Jira server, Uri for GET_CREATE_METADATA - %s ",
+              uri == null ? uriString : uri);
+      log.error(errorMessage, e);
+      return JiraExecutionData.builder().errorMessage(errorMessage).executionStatus(ExecutionStatus.FAILED).build();
+    }
   }
 
   private DelegateResponseData getCreateMetadata(JiraTaskParameters parameters) {

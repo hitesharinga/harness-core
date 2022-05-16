@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 
+import io.harness.jira.JiraUserSearchResponse;
 import software.wings.api.ExecutionDataValue;
 import software.wings.sm.StateExecutionData;
 
@@ -46,6 +47,7 @@ public class JiraExecutionData extends StateExecutionData implements DelegateTas
   private JSONObject fields;
   private JSONArray statuses;
   private JiraCreateMetaResponse createMetadata;
+  private JiraUserSearchResponse userSearchList;
 
   private String currentStatus;
 
