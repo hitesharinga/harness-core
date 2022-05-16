@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -150,6 +149,10 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
       case CHECK_APPROVAL:
         responseData = checkJiraApproval(parameters);
+        break;
+
+      case SEARCH_USER:
+        responseData = getUserListInfo(parameters);
         break;
 
       default:

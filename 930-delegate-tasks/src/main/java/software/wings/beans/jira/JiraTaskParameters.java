@@ -56,13 +56,8 @@ public class JiraTaskParameters implements ExecutionCapabilityDemander {
   private String rejectionField;
   private String rejectionValue;
 
-<<<<<<< Updated upstream:930-delegate-tasks/src/main/java/software/wings/beans/jira/JiraTaskParameters.java
-  private String UserQuery;
-  private String UserQueryOffset;
-=======
   private String userQuery;
   private String userQueryOffset;
->>>>>>> Stashed changes:400-rest/src/main/java/software/wings/beans/jira/JiraTaskParameters.java
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

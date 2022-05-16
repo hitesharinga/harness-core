@@ -10,7 +10,6 @@ public class JiraUserData {
   private boolean active;
 
   public JiraUserData(JSONObject jsonObject) {
-    this.active = jsonObject.getBoolean("active");
     this.accountId = jsonObject.getString("accountId");
     this.displayName = jsonObject.getString("displayName");
   }
