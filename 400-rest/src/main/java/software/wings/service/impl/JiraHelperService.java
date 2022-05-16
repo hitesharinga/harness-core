@@ -31,6 +31,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
+import io.harness.jira.JiraUserSearchResponse;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -284,6 +285,22 @@ public class JiraHelperService {
       throw new HarnessJiraException("Failed to fetch Issue Metadata", WingsException.USER);
     }
     return jiraExecutionData.getCreateMetadata();
+  }
+
+  public JiraUserSearchResponse searchUser(String connectorId, String accountId,
+      String appId, long timeoutMillis, String userQuery, String offset) {
+    JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
+        .accountId(accountId)
+        .userQuery(userQuery)
+        .userQueryOffset(offset)
+        .jiraAction(JiraAction.SEARCH_USER)
+        .build();
+
+    JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters, timeoutMillis);
+    if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
+      throw new HarnessJiraException("Failed to fetch user list", WingsException.USER);
+    }
+    return jiraExecutionData.getUserSearchList();
   }
 
   public JiraExecutionData getApprovalStatus(String connectorId, String accountId, String appId, String issueId,

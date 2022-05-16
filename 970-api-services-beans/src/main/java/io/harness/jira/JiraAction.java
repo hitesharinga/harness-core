@@ -24,7 +24,9 @@ public enum JiraAction {
 
   FETCH_ISSUE("Fetch Issue"),
   FETCH_ISSUE_DATA("Fetch Issue Details"),
-  CHECK_APPROVAL("Check Jira Approval");
+  CHECK_APPROVAL("Check Jira Approval"),
+
+  SEARCH_USER("Search User");
 
   private final String displayName;
 
