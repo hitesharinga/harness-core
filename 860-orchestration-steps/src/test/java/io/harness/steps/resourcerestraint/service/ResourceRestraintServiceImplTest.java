@@ -36,8 +36,6 @@ import org.springframework.dao.DuplicateKeyException;
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintServiceImplTest {
-  private static final String ACCOUNT_ID = "ACCOUNT_ID";
-  private static final String ACCOUNT_ID_2 = "ACCOUNT_ID_2";
   private static final String RESOURCE_CONSTRAINT_ID = "RESOURCE_CONSTRAINT_ID";
 
   @InjectMocks private ResourceRestraintServiceImpl rrService;
@@ -46,29 +44,9 @@ public class ResourceRestraintServiceImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldGetNullWhenResourceConstraintFoundButFromAnotherAccountId() {
-    ResourceRestraint resourceRestraint = ResourceRestraint.builder().accountId(ACCOUNT_ID_2).build();
-    when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.of(resourceRestraint));
-    assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNull();
-    verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
   public void shouldGetNullWhenResourceConstraintNotFound() {
     when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.empty());
     assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNull();
-    verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldGetResourceRestraintWhenResourceConstraintFoundForAccount() {
-    ResourceRestraint resourceRestraint = ResourceRestraint.builder().accountId(ACCOUNT_ID).build();
-    when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.of(resourceRestraint));
-    assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNotNull();
     verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
   }
 
@@ -88,16 +66,6 @@ public class ResourceRestraintServiceImplTest {
   public void shouldGetNullWhenAccountNullAndResourceConstraintNotFound() {
     when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.empty());
     assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNull();
-    verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldGetResourceRestraintWhenAccountNullAndResourceConstraintFound() {
-    ResourceRestraint resourceRestraint = ResourceRestraint.builder().accountId(ACCOUNT_ID).build();
-    when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.of(resourceRestraint));
-    assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNotNull();
     verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
   }
 
