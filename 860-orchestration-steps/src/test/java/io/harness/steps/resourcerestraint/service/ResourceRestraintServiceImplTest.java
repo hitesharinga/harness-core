@@ -53,16 +53,6 @@ public class ResourceRestraintServiceImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldGetNullWhenResourceConstraintFoundWithInnerAccountNull() {
-    ResourceRestraint resourceRestraint = ResourceRestraint.builder().build();
-    when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.of(resourceRestraint));
-    assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNull();
-    verify(resourceRestraintRepository).findById(RESOURCE_CONSTRAINT_ID);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
   public void shouldGetNullWhenAccountNullAndResourceConstraintNotFound() {
     when(resourceRestraintRepository.findById(RESOURCE_CONSTRAINT_ID)).thenReturn(Optional.empty());
     assertThat(rrService.get(RESOURCE_CONSTRAINT_ID)).isNull();
