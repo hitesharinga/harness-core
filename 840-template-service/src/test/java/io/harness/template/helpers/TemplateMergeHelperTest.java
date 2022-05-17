@@ -10,6 +10,7 @@ package io.harness.template.helpers;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -388,6 +389,60 @@ public class TemplateMergeHelperTest extends TemplateServiceTestBase {
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
 
     String resFile = "pipeline-with-template-field-replaced.yaml";
+    String resPipeline = readFile(resFile);
+    assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesYamlForOpaPolicy() {
+    String pipelineTemplateFileName = "pipeline-template-for-opa-policy.yaml";
+    String pipelineTemplateYaml = readFile(pipelineTemplateFileName);
+    TemplateEntity pipelineTemplateEntity = TemplateEntity.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .orgIdentifier(ORG_ID)
+                                                .projectIdentifier(PROJECT_ID)
+                                                .yaml(pipelineTemplateYaml)
+                                                .deleted(false)
+                                                .versionLabel("1")
+                                                .build();
+
+    String stageTemplateFileName = "stage-template-for-opa-policy.yaml";
+    String stageTemplateYaml = readFile(stageTemplateFileName);
+    TemplateEntity stageTemplateEntity = TemplateEntity.builder()
+                                             .accountId(ACCOUNT_ID)
+                                             .orgIdentifier(ORG_ID)
+                                             .projectIdentifier(PROJECT_ID)
+                                             .yaml(stageTemplateYaml)
+                                             .deleted(false)
+                                             .versionLabel("1")
+                                             .build();
+
+    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "PipelineTemplevel1", "1", false))
+        .thenReturn(Optional.of(pipelineTemplateEntity));
+
+    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stg_temp2", "1", false))
+        .thenReturn(Optional.of(stageTemplateEntity));
+
+    String pipelineYamlFile = "pipeline-with-template-for-opa-policy.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+    TemplateMergeResponseDTO pipelineMergeResponse =
+        templateMergeHelper.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true);
+    String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYamlWithTemplateRef();
+    assertThat(finalPipelineYaml).isNotNull();
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("PipelineTemplevel1")
+                                         .versionLabel("1")
+                                         .scope(Scope.PROJECT)
+                                         .fqn("pipeline")
+                                         .build());
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
+
+    String resFile = "pipeline-with-template-with-opa-policy-response.yaml";
     String resPipeline = readFile(resFile);
     assertThat(finalPipelineYaml).isEqualTo(resPipeline);
   }
