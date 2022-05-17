@@ -18,6 +18,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.harness.yaml.core.VariableExpression;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -44,10 +45,10 @@ public class CustomStageConfig implements StageInfoConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @Size(min = 1) List<ExecutionWrapperConfig> steps;
+  @NotNull @VariableExpression(skipVariableExpression = true) private ExecutionElementConfig execution;
 
   @Override
   public ExecutionElementConfig getExecution() {
-    return null;
+    return execution;
   }
 }
