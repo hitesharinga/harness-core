@@ -39,6 +39,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraIssueType;
 import io.harness.jira.JiraProjectData;
+import io.harness.jira.JiraUserSearchResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -122,6 +123,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   private static final String TIME_TRACKING_ORIGINAL_ESTIMATE = "TimeTracking:OriginalEstimate";
   private static final String TIME_TRACKING_REMAINING_ESTIMATE = "TimeTracking:RemainingEstimate";
   private static final String NUMBER = "number";
+  private static final String USER_TYPE = "user";
 
   @Inject private transient ActivityService activityService;
   @Inject @Transient private LogService logService;
@@ -145,6 +147,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Getter @Setter private String status;
   @Getter @Setter private String comment;
   @Getter @Setter private String issueId;
+  @Getter @Setter private String userAccountId;
+  @Getter @Setter private String userQuery;
   private Map<String, JiraCustomFieldValue> customFields;
   private static final Pattern currentPattern =
       Pattern.compile("(current\\(\\))(\\s*([+-])\\s*(\\d{0,13}))*", Pattern.CASE_INSENSITIVE);
@@ -204,6 +208,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
           ? jiraHelperService.getCreateMetadata(
               jiraConnectorId, null, project, accountId, context.getAppId(), timeoutMillis, issueType)
           : createMeta;
+
+      checkAndSetUserAccountId(context, timeoutMillis);
 
       Map<String, String> customFieldsIdToNameMap = mapCustomFieldsIdsToNames(createMetadata);
       Map<String, Map<Object, Object>> customFieldsValueToIdMap =
@@ -566,7 +572,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
         .filter(jiraField
             -> jiraField.getSchema().get("type").equals(OPTION) || jiraField.getSchema().get("type").equals(RESOLUTION)
                 || (jiraField.getSchema().get("type").equals(ARRAY) && jiraField.getAllowedValues() != null)
-                || jiraField.getSchema().get("type").equals(NUMBER))
+                || jiraField.getSchema().get("type").equals(NUMBER) || jiraField.getSchema().get("type").equals(USER_TYPE))
         .collect(toMap(JiraField::getKey, JiraField::getName));
   }
 
@@ -884,5 +890,18 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Override
   public boolean isSelectionLogsTrackingForTasksEnabled() {
     return true;
+  }
+
+  private void checkAndSetUserAccountId(ExecutionContext context, long timeoutMillis) {
+    if (EmptyPredicate.isNotEmpty(userQuery) && EmptyPredicate.isEmpty(userAccountId)) {
+      JiraUserSearchResponse userSearch = jiraHelperService.searchUser(jiraConnectorId, context.getAccountId(), context.getAppId(), timeoutMillis, userQuery, null);
+      if (userSearch.getUserDataList().size() == 0) {
+        throw new InvalidRequestException("No jira users were found.");
+      }
+      if (userSearch.getUserDataList().size() > 1) {
+        throw new InvalidRequestException("More than one jira users were found.");
+      }
+      userAccountId = userSearch.getUserDataList().get(0).getAccountId();
+    }
   }
 }

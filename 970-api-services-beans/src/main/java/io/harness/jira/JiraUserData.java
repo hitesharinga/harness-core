@@ -7,7 +7,6 @@ import net.sf.json.JSONObject;
 public class JiraUserData {
   private String accountId;
   private String displayName;
-  private boolean active;
 
   public JiraUserData(JSONObject jsonObject) {
     this.accountId = jsonObject.getString("accountId");
