@@ -27,6 +27,7 @@ import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraUserSearchResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.rcarz.jiraclient.BasicCredentials;
 import net.rcarz.jiraclient.Field;
@@ -383,9 +385,17 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData updateTicket(JiraTaskParameters parameters) {
+    JiraCustomFieldValue jiraCustomFieldValue = new JiraCustomFieldValue();
+    jiraCustomFieldValue.setFieldValue("623e79124a57610068e8849e");
+    jiraCustomFieldValue.setFieldType("user");
+    Map<String, JiraCustomFieldValue> mp = new HashMap<>();
+    mp.put("customfield_10633", jiraCustomFieldValue);
+    parameters.setCustomFields(mp);
     JiraClient jiraClient;
+    io.harness.jira.JiraClient jiraNGClient;
     try {
       jiraClient = getJiraClient(parameters);
+      jiraNGClient = getNGJiraClient(parameters);
     } catch (JiraException j) {
       String errorMessage = "Failed to create jira client while trying to update : " + parameters.getUpdateIssueIds();
       log.error(errorMessage, j);
@@ -437,8 +447,18 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         }
 
         if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-          setCustomFieldsOnUpdate(parameters, update);
-          fieldsUpdated = true;
+          Map<String, String> userTypeFields =
+              parameters.getCustomFields()
+                  .entrySet()
+                  .stream()
+                  .filter(map -> map.getValue().getFieldType().equals("user"))
+                  .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
+          if (userTypeFields.size() == parameters.getCustomFields().size()) {
+            updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
+          } else {
+            setCustomFieldsOnUpdate(parameters, update);
+            fieldsUpdated = true;
+          }
         }
 
         if (fieldsUpdated) {
@@ -486,9 +506,19 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .build();
   }
 
+  void updateUserTypeCustomFieldsIfPresent(
+      JiraTaskParameters parameters, io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
+      if (!userTypeFields.isEmpty()) {
+        jiraNGClient.updateIssue(parameters.getIssueId(), null, null, userTypeFields);
+      }
+  }
+
   void setCustomFieldsOnUpdate(JiraTaskParameters parameters, FluentUpdate update) {
     TimeTracking timeTracking = new TimeTracking();
     for (Entry<String, JiraCustomFieldValue> customField : parameters.getCustomFields().entrySet()) {
+      if (customField.getValue().getFieldType() == "user") {
+        continue;
+      }
       if (customField.getKey().equals("TimeTracking:OriginalEstimate")) {
         timeTracking.setOriginalEstimate((String) getCustomFieldValue(customField));
       } else if (customField.getKey().equals("TimeTracking:RemainingEstimate")) {
@@ -751,6 +781,20 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     } else {
       return new JiraClient(baseUrl, creds);
     }
+  }
+
+  protected io.harness.jira.JiraClient getNGJiraClient(JiraTaskParameters parameters) {
+    JiraConfig jiraConfig = parameters.getJiraConfig();
+    encryptionService.decrypt(jiraConfig, parameters.getEncryptionDetails(), false);
+    String baseUrl =
+        jiraConfig.getBaseUrl().endsWith("/") ? jiraConfig.getBaseUrl() : jiraConfig.getBaseUrl().concat("/");
+    log.info(" Getting Jira Client from:  " + baseUrl);
+    JiraInternalConfig jiraNGConfig = JiraInternalConfig.builder()
+                                          .jiraUrl(baseUrl)
+                                          .username(jiraConfig.getUsername())
+                                          .password(new String(jiraConfig.getPassword()))
+                                          .build();
+    return new io.harness.jira.JiraClient(jiraNGConfig);
   }
 
   private HttpClient getProxyEnabledHttpClientForJira() {

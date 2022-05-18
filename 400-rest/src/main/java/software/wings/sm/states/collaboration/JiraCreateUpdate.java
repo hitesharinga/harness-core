@@ -184,6 +184,12 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   }
 
   private ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
+//    JiraCustomFieldValue jiraCustomFieldValue = new JiraCustomFieldValue();
+//    jiraCustomFieldValue.setFieldValue("623e79124a57610068e8849e");
+//    jiraCustomFieldValue.setFieldType("user");
+//    Map<String, JiraCustomFieldValue> mp = new HashMap<>();
+//    mp.put("customfield_10633", jiraCustomFieldValue);
+//    setCustomFields(mp);
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     boolean areRequiredFieldsTemplatized = checkIfRequiredFieldsAreTemplatized();
     String accountId = context.getAccountId();
