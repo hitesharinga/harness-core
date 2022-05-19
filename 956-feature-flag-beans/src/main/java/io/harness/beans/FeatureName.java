@@ -341,7 +341,8 @@ public enum FeatureName {
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
   AZURE_REPO_CONNECTOR,
-  HELM_OCI_SUPPORT;
+  HELM_OCI_SUPPORT,
+  USE_NG_JIRA_CLIENT_IN_CG;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

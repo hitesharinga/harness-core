@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import software.wings.beans.jira.JiraTaskParameters;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -225,5 +226,25 @@ public class JiraIssueUtilsNG {
       }
     }
     throw new JiraClientException(String.format("Invalid datetime value for field [%s]", name), true);
+  }
+
+  public Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters) {
+    Map<String, String> fields = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
+      fields.put("summary", parameters.getSummary());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
+      fields.put("priority", parameters.getPriority());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getDescription())) {
+      fields.put("description", parameters.getDescription());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
+      fields.put("labels", parameters.getLabels());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
+      setCustomFieldsOnUpdate(parameters, update);
+      fieldsUpdated = true;
+    }
   }
 }
