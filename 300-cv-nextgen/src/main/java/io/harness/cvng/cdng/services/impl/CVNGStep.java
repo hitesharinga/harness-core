@@ -16,8 +16,8 @@ import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.cdng.beans.CVNGStepParameter;
-import io.harness.cvng.cdng.beans.CVNGStepType;
+import io.harness.cvng.cdng.beans.*;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -68,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +113,33 @@ public class CVNGStep extends AsyncExecutableWithRollback {
                                                             .serviceIdentifier(serviceIdentifier)
                                                             .environmentIdentifier(envIdentifier)
                                                             .build();
-
+    MonitoredServiceNode monitoredServiceNode = stepParameters.getSpec().getMonitoredService();
+    MonitoredServiceSpecType monitoredServiceType = MonitoredServiceSpecType.DEFAULT;
+    if (Objects.nonNull(monitoredServiceNode)) {
+      try {
+        monitoredServiceType = MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType());
+      } catch (IllegalArgumentException | NullPointerException ex) {
+        // do something
+      }
+    }
+    switch (monitoredServiceType) {
+      case TEMPLATE: {
+        TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
+            (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
+        String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
+        String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
+        break;
+      }
+      case CONFIGURED: {
+        ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
+            (ConfiguredMonitoredServiceSpec) monitoredServiceNode.getSpec();
+        String monitoredServiceRef = configuredMonitoredServiceSpec.getMonitoredServiceRef().getValue();
+        break;
+      }
+      case DEFAULT:
+      default: {
+      }
+    }
     Optional<MonitoredService> monitoredService =
         monitoredServiceService.getApplicationMonitoredService(serviceEnvironmentParams);
     Instant deploymentStartTime = Instant.ofEpochMilli(
