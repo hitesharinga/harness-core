@@ -10,7 +10,7 @@ package software.wings.resources;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import io.harness.jira.JiraCreateMetaResponse;
-import io.harness.jira.JiraUserSearchResponse;
+import io.harness.jira.JiraUserData;
 import io.harness.rest.RestResponse;
 
 import software.wings.service.impl.JiraHelperService;
@@ -24,6 +24,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
+
+import java.util.List;
 
 @Path("/jirasetting")
 @Produces("application/json")
@@ -100,7 +102,7 @@ public class JiraSettingResource {
   @Path("{connectorId}/searchuser")
   @Timed
   @ExceptionMetered
-  public RestResponse<JiraUserSearchResponse> getUserSearch(@QueryParam("appId") String appId,
+  public RestResponse<List<JiraUserData>> getUserSearch(@QueryParam("appId") String appId,
       @QueryParam("accountId") @NotEmpty String accountId, @PathParam("connectorId") String connectorId,
       @QueryParam("user") String userQuery, @QueryParam("offset") String offset) {
     return new RestResponse<>(jiraHelperService.searchUser(

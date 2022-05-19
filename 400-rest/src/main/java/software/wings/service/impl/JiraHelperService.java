@@ -31,7 +31,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
-import io.harness.jira.JiraUserSearchResponse;
+import io.harness.jira.JiraUserData;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -53,6 +53,8 @@ import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
 import org.mongodb.morphia.annotations.Transient;
+
+import java.util.List;
 
 /**
  * All Jira apis should be accessed via this object.
@@ -287,7 +289,7 @@ public class JiraHelperService {
     return jiraExecutionData.getCreateMetadata();
   }
 
-  public JiraUserSearchResponse searchUser(String connectorId, String accountId,
+  public List<JiraUserData> searchUser(String connectorId, String accountId,
       String appId, long timeoutMillis, String userQuery, String offset) {
     JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
         .accountId(accountId)

@@ -22,13 +22,14 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.JiraClientException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInternalConfig;
-import io.harness.jira.JiraUserSearchResponse;
+import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
 
@@ -196,35 +197,20 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData getUserListInfo(JiraTaskParameters parameters) {
-    URI uri = null;
     try {
-      JiraClient jiraClient = getJiraClient(parameters);
+      io.harness.jira.JiraClient jiraClient = getNGJiraClient(parameters);
 
-      Map<String, String> queryParams = new HashMap<>();
-      queryParams.put("query", parameters.getUserQuery());
-      queryParams.put("maxResults", "10");
-      if (EmptyPredicate.isNotEmpty(parameters.getUserQueryOffset())) {
-        queryParams.put("startAt", parameters.getUserQueryOffset());
-      }
-
-      uri = jiraClient.getRestClient().buildURI(Resource.getBaseUri() + "user/search", queryParams);
-
-      JSON response = jiraClient.getRestClient().get(uri);
-
-      JiraUserSearchResponse jiraUserSearchResponse = new JiraUserSearchResponse((JSONArray) response);
+      List<JiraUserData> jiraUserDataList =
+          jiraClient.getUsers(parameters.getUserQuery(), null, parameters.getUserQueryOffset());
 
       return JiraExecutionData.builder()
           .executionStatus(ExecutionStatus.SUCCESS)
-          .userSearchList(jiraUserSearchResponse)
+          .userSearchList(jiraUserDataList)
           .build();
-    } catch (URISyntaxException | RestException | IOException | JiraException | RuntimeException e) {
-      String uriString = Resource.getBaseUri() == null ? "" : Resource.getBaseUri();
-      if (uri == null) {
-        uriString = uriString + "user/search";
-      }
-      String errorMessage =
-          String.format("Failed to fetch issue metadata from Jira server, Uri for GET_CREATE_METADATA - %s ",
-              uri == null ? uriString : uri);
+    } catch (JiraClientException e) {
+      String uriString = Resource.getBaseUri() == null ? "" : Resource.getBaseUri() + "user/search";
+      String errorMessage = String.format(
+          "Failed to fetch issue metadata from Jira server, Uri for GET_CREATE_METADATA - %s ", uriString);
       log.error(errorMessage, e);
       return JiraExecutionData.builder().errorMessage(errorMessage).executionStatus(ExecutionStatus.FAILED).build();
     }
@@ -385,12 +371,6 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData updateTicket(JiraTaskParameters parameters) {
-    JiraCustomFieldValue jiraCustomFieldValue = new JiraCustomFieldValue();
-    jiraCustomFieldValue.setFieldValue("623e79124a57610068e8849e");
-    jiraCustomFieldValue.setFieldType("user");
-    Map<String, JiraCustomFieldValue> mp = new HashMap<>();
-    mp.put("customfield_10633", jiraCustomFieldValue);
-    parameters.setCustomFields(mp);
     JiraClient jiraClient;
     io.harness.jira.JiraClient jiraNGClient;
     try {
@@ -454,7 +434,14 @@ public class JiraTask extends AbstractDelegateRunnableTask {
                   .filter(map -> map.getValue().getFieldType().equals("user"))
                   .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
           if (userTypeFields.size() == parameters.getCustomFields().size()) {
-            updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
+            try {
+              updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
+            } catch (InvalidRequestException ex) {
+              return JiraExecutionData.builder()
+                  .executionStatus(ExecutionStatus.FAILED)
+                  .errorMessage(ex.getMessage())
+                  .build();
+            }
           } else {
             setCustomFieldsOnUpdate(parameters, update);
             fieldsUpdated = true;
@@ -508,9 +495,20 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
   void updateUserTypeCustomFieldsIfPresent(
       JiraTaskParameters parameters, io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
-      if (!userTypeFields.isEmpty()) {
-        jiraNGClient.updateIssue(parameters.getIssueId(), null, null, userTypeFields);
+    if (!userTypeFields.isEmpty()) {
+      for (Entry<String, String> userField : userTypeFields.entrySet()) {
+        List<JiraUserData> userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
+        if (userDataList.isEmpty()) {
+          userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
+          if (userDataList.size() != 1) {
+            throw new InvalidRequestException("Found " + userDataList.size() + "jira users with this query");
+          }
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        }
       }
+
+      jiraNGClient.updateIssue(parameters.getIssueId(), null, null, userTypeFields);
+    }
   }
 
   void setCustomFieldsOnUpdate(JiraTaskParameters parameters, FluentUpdate update) {

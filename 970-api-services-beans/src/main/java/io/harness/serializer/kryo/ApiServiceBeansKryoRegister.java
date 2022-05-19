@@ -79,7 +79,6 @@ import io.harness.jira.JiraStatusNG;
 import io.harness.jira.JiraTimeTrackingFieldNG;
 import io.harness.jira.JiraUpdateIssueRequestNG;
 import io.harness.jira.JiraUserData;
-import io.harness.jira.JiraUserSearchResponse;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.k8s.model.IstioDestinationWeight;
@@ -314,7 +313,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueType.class, 7199);
     kryo.register(JiraField.class, 7200);
     kryo.register(JiraCreateMetaResponse.class, 7201);
-    kryo.register(JiraUserSearchResponse.class, 9696969);
     kryo.register(JiraUserData.class, 9696970);
 
     kryo.register(AwsConfig.class, 1428);
