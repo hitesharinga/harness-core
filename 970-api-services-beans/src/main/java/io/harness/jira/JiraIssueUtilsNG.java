@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.google.common.base.Joiner;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.JiraClientException;
@@ -228,7 +229,7 @@ public class JiraIssueUtilsNG {
     throw new JiraClientException(String.format("Invalid datetime value for field [%s]", name), true);
   }
 
-  public Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters) {
+  public Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters, Map<String, String> userTypeFields) {
     Map<String, String> fields = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
       fields.put("summary", parameters.getSummary());
@@ -240,11 +241,25 @@ public class JiraIssueUtilsNG {
       fields.put("description", parameters.getDescription());
     }
     if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
-      fields.put("labels", parameters.getLabels());
+      String labels = Joiner.on(",").join(parameters.getLabels());
+      fields.put("labels", labels);
     }
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-      setCustomFieldsOnUpdate(parameters, update);
-      fieldsUpdated = true;
+      for (Map.Entry<String, JiraCustomFieldValue> field : parameters.getCustomFields().entrySet()) {
+        fields.put(field.getKey(), field.getValue().getFieldValue());
+      }
     }
+    if (EmptyPredicate.isNotEmpty(parameters.getComment())) {
+      fields.put("comment", parameters.getComment());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getStatus())) {
+      fields.put("status", parameters.getStatus());
+    }
+    if (EmptyPredicate.isNotEmpty(userTypeFields)) {
+      for (Map.Entry<String, String> userField : userTypeFields.entrySet()) {
+        fields.put(userField.getKey(), userField.getValue());
+      }
+    }
+    return fields;
   }
 }

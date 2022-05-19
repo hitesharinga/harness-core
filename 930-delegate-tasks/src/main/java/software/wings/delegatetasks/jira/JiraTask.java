@@ -32,6 +32,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueUtilsNG;
 import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
@@ -382,12 +383,37 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     List<String> issueKeys = new ArrayList<>();
     List<String> issueUrls = new ArrayList<>();
     JiraIssueData firstIssueInListData = null;
+    Map<String, String> userTypeFields = null;
+
+    if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
+      userTypeFields =
+          parameters.getCustomFields()
+              .entrySet()
+              .stream()
+              .filter(map -> map.getValue().getFieldType().equals("user"))
+              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
+      if (!userTypeFields.isEmpty()) {
+        for (Entry<String, String> userField : userTypeFields.entrySet()) {
+          List<JiraUserData> userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
+          if (userDataList.isEmpty()) {
+            userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
+            if (userDataList.size() != 1) {
+              throw new InvalidRequestException("Found " + userDataList.size() + "jira user matches with this query for field: " + userField.getKey());
+            }
+            userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+          }
+        }
+      }
+    }
+
+    Map<String, String> fieldsMap = JiraIssueUtilsNG.extractFieldsFromCGParameters(parameters, userTypeFields);
 
     for (String issueId : parameters.getUpdateIssueIds()) {
       try {
         JiraIssueNG issue = jiraNGClient.getIssue(issueId);
+        String issueProject = issue.getFields().get("project").toString();
 
-        if (!issue.getProject().getKey().equals(parameters.getProject())) {
+        if (!issueProject.equals(parameters.getProject())) {
           return JiraExecutionData.builder()
               .executionStatus(ExecutionStatus.FAILED)
               .errorMessage(String.format(
@@ -396,62 +422,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               .build();
         }
 
-        boolean fieldsUpdated = false;
-        FluentUpdate update = issue.update();
-
-        if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
-          update.field(Field.SUMMARY, parameters.getSummary());
-          fieldsUpdated = true;
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
-          update.field(Field.PRIORITY, parameters.getPriority());
-          fieldsUpdated = true;
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getDescription())) {
-          update.field(Field.DESCRIPTION, parameters.getDescription());
-          fieldsUpdated = true;
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
-          update.field(Field.LABELS, parameters.getLabels());
-          fieldsUpdated = true;
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-          Map<String, String> userTypeFields =
-              parameters.getCustomFields()
-                  .entrySet()
-                  .stream()
-                  .filter(map -> map.getValue().getFieldType().equals("user"))
-                  .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
-          if (userTypeFields.size() == parameters.getCustomFields().size()) {
-            try {
-              updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
-            } catch (InvalidRequestException ex) {
-              return JiraExecutionData.builder()
-                  .executionStatus(ExecutionStatus.FAILED)
-                  .errorMessage(ex.getMessage())
-                  .build();
-            }
-          } else {
-            setCustomFieldsOnUpdate(parameters, update);
-            fieldsUpdated = true;
-          }
-        }
-
-        if (fieldsUpdated) {
-          update.execute();
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getComment())) {
-          issue.addComment(parameters.getComment());
-        }
-
-        if (EmptyPredicate.isNotEmpty(parameters.getStatus())) {
-          updateStatus(issue, parameters.getStatus());
-        }
+        jiraNGClient.updateIssue(issue.getKey(), parameters.getStatus(), null, fieldsMap);
 
         log.info("Successfully updated ticket : " + issueId);
         issueKeys.add(issue.getKey());
@@ -460,7 +431,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         if (firstIssueInListData == null) {
           firstIssueInListData = JiraIssueData.builder().description(parameters.getDescription()).build();
         }
-      } catch (JiraException j) {
+      } catch (JiraClientException j) {
         String errorMessage = "Failed to update Jira Issue for Id: " + issueId + ". " + extractResponseMessage(j);
         log.error(errorMessage, j);
         return JiraExecutionData.builder()
