@@ -32,11 +32,13 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.exception.GeneralException;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
@@ -104,6 +106,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Mock private DelegateService delegateService;
   @Mock private SecretManager secretManager;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks JiraCreateUpdate jiraCreateUpdateState = new JiraCreateUpdate("Jira");
   private static JiraCreateMetaResponse createMetaResponse;
   private static JSONArray projects;
@@ -668,6 +671,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldQueueDelegateTaskAndReturnExecutionResponse() {
     setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(false);
     ExecutionResponse expectedExecutionResponse =
         ExecutionResponse.builder()
             .async(true)
@@ -706,6 +710,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFailExecutionWhenIssueIdIsNotRendered() {
     setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(false);
     jiraCreateUpdateState.setJiraAction(JiraAction.UPDATE_TICKET);
     jiraCreateUpdateState.setIssueId(StringUtils.EMPTY);
     when(context.renderExpression(StringUtils.EMPTY)).thenReturn(StringUtils.EMPTY);
