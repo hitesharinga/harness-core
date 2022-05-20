@@ -43,7 +43,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfraStepUtils {
-  @Inject private InfrastructureSectionHelper infrastructureSectionHelper;
+  @Inject private InfrastructureSectionHelper infrastructureSectionHelper = new InfrastructureSectionHelper();
 
   public void validateResources(
       AccessControlClient accessControlClient, Ambiance ambiance, InfraSectionStepParameters stepParameters) {
