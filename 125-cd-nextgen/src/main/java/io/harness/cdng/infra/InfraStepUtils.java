@@ -20,9 +20,11 @@ import io.harness.cdng.environment.EnvironmentMapper;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.steps.InfrastructureSectionHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.mapper.TagMapper;
@@ -35,12 +37,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.inject.Inject;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfraStepUtils {
+  @Inject private InfrastructureSectionHelper InfrastructureSectionHelper;
+
   public void validateResources(
       AccessControlClient accessControlClient, Ambiance ambiance, InfraSectionStepParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
@@ -70,7 +75,8 @@ public class InfraStepUtils {
   }
 
   public EnvironmentOutcome processEnvironment(EnvironmentService environmentService, Ambiance ambiance,
-      InfraUseFromStage useFromStage, EnvironmentYaml environment, ParameterField<String> environmentRef) {
+      InfraUseFromStage useFromStage, EnvironmentYaml environment, ParameterField<String> environmentRef,
+      NGLogCallback logCallback) {
     EnvironmentYaml environmentOverrides = null;
 
     if (useFromStage != null && useFromStage.getOverrides() != null) {
@@ -79,26 +85,31 @@ public class InfraStepUtils {
         environmentOverrides.setName(environmentOverrides.getIdentifier());
       }
     }
-    return processEnvironment(environmentService, environmentOverrides, ambiance, environment, environmentRef);
+    return processEnvironment(
+        environmentService, environmentOverrides, ambiance, environment, environmentRef, logCallback);
   }
 
   private EnvironmentOutcome processEnvironment(EnvironmentService environmentService,
       EnvironmentYaml environmentOverrides, Ambiance ambiance, EnvironmentYaml environmentYaml,
-      ParameterField<String> environmentRef) {
+      ParameterField<String> environmentRef, NGLogCallback logCallback) {
     if (environmentYaml == null) {
-      environmentYaml = createEnvYamlFromEnvRef(environmentService, ambiance, environmentRef);
+      environmentYaml = createEnvYamlFromEnvRef(environmentService, ambiance, environmentRef, logCallback);
+      saveExecutionLog(logCallback, "Created environment YAML from reference");
     }
     if (EmptyPredicate.isEmpty(environmentYaml.getName())) {
       environmentYaml.setName(environmentYaml.getIdentifier());
     }
     EnvironmentYaml finalEnvironmentYaml =
         environmentOverrides != null ? environmentYaml.applyOverrides(environmentOverrides) : environmentYaml;
-    Environment environment = getEnvironmentObject(finalEnvironmentYaml, ambiance);
+    Environment environment = getEnvironmentObject(finalEnvironmentYaml, ambiance, logCallback);
+    saveExecutionLog(logCallback, "Environment object fetched");
     environmentService.upsert(environment);
     return EnvironmentMapper.toOutcome(finalEnvironmentYaml);
   }
 
-  private Environment getEnvironmentObject(EnvironmentYaml environmentYaml, Ambiance ambiance) {
+  private Environment getEnvironmentObject(
+      EnvironmentYaml environmentYaml, Ambiance ambiance, NGLogCallback logCallback) {
+    saveExecutionLog(logCallback, "Fetching environment object...");
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -117,8 +128,9 @@ public class InfraStepUtils {
         .build();
   }
 
-  private EnvironmentYaml createEnvYamlFromEnvRef(
-      EnvironmentService environmentService, Ambiance ambiance, ParameterField<String> environmentRef) {
+  private EnvironmentYaml createEnvYamlFromEnvRef(EnvironmentService environmentService, Ambiance ambiance,
+      ParameterField<String> environmentRef, NGLogCallback logCallback) {
+    saveExecutionLog(logCallback, "Creating environment YAML from reference...");
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -138,5 +150,11 @@ public class InfraStepUtils {
           .build();
     }
     throw new InvalidRequestException("Env with identifier " + envIdentifier + " does not exist");
+  }
+
+  private void saveExecutionLog(NGLogCallback logCallback, String line) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(line);
+    }
   }
 }

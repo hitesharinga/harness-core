@@ -94,6 +94,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @Inject private EnvironmentService environmentService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private InfrastructureSectionHelper infrastructureSectionHelper;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -116,9 +117,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
-    NGLogCallback ngManagerLogCallback =
-        new NGLogCallback(logStreamingStepClientFactory, ambiance, INFRASTRUCTURE_COMMAND_UNIT, true);
-    ngManagerLogCallback.saveExecutionLog("Starting Infrastructure logs");
+    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
 
     validateConnector(infrastructure, ambiance);
     validateInfrastructure(infrastructure);
@@ -130,8 +129,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
     publishInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
-    ngManagerLogCallback.saveExecutionLog(
-        "Infrastructure Step completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    logCallback.saveExecutionLog("Completed infrastructure step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()
@@ -149,6 +147,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -158,11 +157,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
           k8sInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
+      saveExecutionLog(logCallback, "Completing infrastructure step...");
     }
   }
 
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
+    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    saveExecutionLog(logCallback, "Validating connector...");
     if (infrastructure == null) {
       return;
     }
@@ -197,9 +199,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
+    saveExecutionLog(logCallback, "Connector validated");
   }
 
   private ConnectorInfoDTO validateAndGetConnector(ParameterField<String> connectorRef, Ambiance ambiance) {
+    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    saveExecutionLog(logCallback, "Fetching connector...");
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {
       throw new InvalidRequestException("Connector ref field not present in infrastructure");
@@ -214,6 +219,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       throw new InvalidRequestException(String.format("Connector not found for identifier : [%s]", connectorRefValue));
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
+    saveExecutionLog(logCallback, "Connector fetched");
 
     return connectorDTO.get().getConnector();
   }
@@ -288,5 +294,11 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infrastructure);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  private void saveExecutionLog(NGLogCallback logCallback, String line) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(line);
+    }
   }
 }
