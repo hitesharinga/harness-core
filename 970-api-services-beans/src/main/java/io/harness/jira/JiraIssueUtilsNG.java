@@ -74,7 +74,7 @@ public class JiraIssueUtilsNG {
 
     Map<String, JiraFieldNG> finalIssueTypeFields = issueTypeFields;
 
-    parseFieldsForCGCalls(finalIssueTypeFields, fields);
+    fields = parseFieldsForCGCalls(finalIssueTypeFields, fields);
 
     Set<String> invalidFields =
         fields.keySet().stream().filter(k -> !finalIssueTypeFields.containsKey(k)).collect(Collectors.toSet());
@@ -109,15 +109,14 @@ public class JiraIssueUtilsNG {
     fieldKeys.forEach(key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key)));
   }
 
-  private void parseFieldsForCGCalls(Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
+  private Map<String, String> parseFieldsForCGCalls(Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
     Map<String, String> fieldIdsMapToName = finalIssueTypeFields.entrySet().stream().collect(Collectors.toMap(e -> e.getValue().getKey(), e -> e.getKey()));
-    for (Map.Entry<String, String> field : fields.entrySet()) {
+    return fields.entrySet().stream().collect(Collectors.toMap(field -> {
       if (fieldIdsMapToName.containsKey(field.getKey()) && !finalIssueTypeFields.containsKey(field.getKey())) {
-        String fieldName = fieldIdsMapToName.get(field.getKey());
-        fields.put(fieldName, field.getValue());
-        fields.remove(field.getKey());
+        return fieldIdsMapToName.get(field.getKey());
       }
-    }
+      return field.getKey();
+    }, Map.Entry::getValue));
   }
 
   private void addTimeTrackingField(Map<String, Object> currFieldValues, Map<String, String> fields) {

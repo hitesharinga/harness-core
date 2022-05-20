@@ -398,7 +398,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               .filter(map -> map.getValue().getFieldType().equals("user"))
               .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
-      updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
+      setUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
     }
 
     Map<String, String> fieldsMap = extractFieldsFromCGParameters(parameters, userTypeFields);
@@ -556,7 +556,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  void updateUserTypeCustomFieldsIfPresent(
+  void setUserTypeCustomFieldsIfPresent(
       JiraTaskParameters parameters, io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
     if (!userTypeFields.isEmpty()) {
       for (Entry<String, String> userField : userTypeFields.entrySet()) {
@@ -569,8 +569,6 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
         }
       }
-
-      jiraNGClient.updateIssue(parameters.getIssueId(), null, null, userTypeFields);
     }
   }
 
@@ -662,7 +660,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               .filter(map -> map.getValue().getFieldType().equals("user"))
               .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
-      updateUserTypeCustomFieldsIfPresent(parameters, jira, userTypeFields);
+      setUserTypeCustomFieldsIfPresent(parameters, jira, userTypeFields);
     }
 
     try {
@@ -672,7 +670,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
       return JiraExecutionData.builder()
           .executionStatus(ExecutionStatus.SUCCESS)
-          .jiraAction(JiraAction.CREATE_TICKET)
+          .jiraAction(JiraAction.CREATE_TICKET_NG)
           .errorMessage("Created Jira ticket " + issue.getKey())
           .issueId(issue.getId())
           .issueKey(issue.getKey())
