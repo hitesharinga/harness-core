@@ -54,9 +54,8 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
     log.info("Starting execution for InfraSection Step [{}]", stepParameters);
-    EnvironmentOutcome environmentOutcome =
-        InfraStepUtils.processEnvironment(environmentService, ambiance, stepParameters.getUseFromStage(),
-            stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), logCallback);
+    EnvironmentOutcome environmentOutcome = InfraStepUtils.processEnvironment(
+        environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), logCallback);
     executionSweepingOutputResolver.consume(
         ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepOutcomeGroup.STAGE.name());
     return StepResponse.builder().status(Status.SUCCEEDED).build();
