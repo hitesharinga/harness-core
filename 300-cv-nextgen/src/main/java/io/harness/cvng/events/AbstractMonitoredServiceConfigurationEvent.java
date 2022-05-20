@@ -7,13 +7,8 @@
 
 package io.harness.cvng.events;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
-import io.harness.ng.core.OrgScope;
-import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.ResourceScope;
 
 import com.google.common.base.Preconditions;
@@ -35,15 +30,15 @@ public abstract class AbstractMonitoredServiceConfigurationEvent implements Even
     DELETE("MonitoredServiceDeleteEvent"),
     TOGGLE("MonitoredServiceToggleEvent");
 
-    private final String name;
+    private final String enumName;
 
     MonitoredServiceEventTypes(String s) {
-      this.name = s;
+      this.enumName = s;
     }
 
     @Override
     public String toString() {
-      return this.name;
+      return this.enumName;
     }
   }
 
