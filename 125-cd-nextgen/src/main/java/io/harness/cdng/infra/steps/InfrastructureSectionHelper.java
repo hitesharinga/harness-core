@@ -26,7 +26,6 @@ public class InfrastructureSectionHelper {
   }
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    String INFRASTRUCTURE_COMMAND_UNIT = "Execute";
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, INFRASTRUCTURE_COMMAND_UNIT, shouldOpenStream);
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
   }
 }
