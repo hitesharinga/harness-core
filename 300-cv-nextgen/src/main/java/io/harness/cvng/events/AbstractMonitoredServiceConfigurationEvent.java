@@ -38,9 +38,10 @@ public abstract class AbstractMonitoredServiceConfigurationEvent implements Even
     private final String name;
 
     MonitoredServiceEventTypes(String s) {
-      name = s;
+      this.name = s;
     }
 
+    @Override
     public String toString() {
       return this.name;
     }
