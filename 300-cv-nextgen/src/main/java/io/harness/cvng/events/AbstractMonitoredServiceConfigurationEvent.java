@@ -29,17 +29,27 @@ public abstract class AbstractMonitoredServiceConfigurationEvent implements Even
   private String orgIdentifier;
   private String projectIdentifier;
 
+  public enum MonitoredServiceEventTypes {
+    CREATE("MonitoredServiceCreateEvent"),
+    UPDATE("MonitoredServiceUpdateEvent"),
+    DELETE("MonitoredServiceDeleteEvent"),
+    TOGGLE("MonitoredServiceToggleEvent");
+
+    private final String name;
+
+    MonitoredServiceEventTypes(String s) {
+      name = s;
+    }
+
+    public String toString() {
+      return this.name;
+    }
+  }
+
   @Override
   public ResourceScope getResourceScope() {
     Preconditions.checkNotNull(accountIdentifier);
-    if (isNotEmpty(projectIdentifier) && isNotEmpty(orgIdentifier)) {
-      return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
-    }
-
-    if (isEmpty(projectIdentifier) && isNotEmpty(orgIdentifier)) {
-      return new OrgScope(accountIdentifier, orgIdentifier);
-    }
-
-    return new AccountScope(accountIdentifier);
+    Preconditions.checkNotNull(orgIdentifier);
+    return new AccountScope(projectIdentifier);
   }
 }
