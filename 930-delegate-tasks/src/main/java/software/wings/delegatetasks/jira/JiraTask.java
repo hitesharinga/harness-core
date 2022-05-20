@@ -9,11 +9,11 @@ package software.wings.delegatetasks.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import com.google.common.base.Joiner;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -25,14 +25,12 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueNG;
-import io.harness.jira.JiraIssueUtilsNG;
 import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
@@ -95,7 +93,6 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   public static final String RESOLUTION = "resolution";
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateLogService logService;
-  @Inject private FeatureFlagService featureFlagService;
 
   private static final String JIRA_APPROVAL_FIELD_KEY = "name";
   private static final String WEBHOOK_CREATION_URL = "/rest/webhooks/1.0/webhook/";
@@ -131,8 +128,16 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         responseData = updateTicket(parameters);
         break;
 
+      case UPDATE_TICKET_NG:
+        responseData = updateTicketNG(parameters);
+        break;
+
       case CREATE_TICKET:
         responseData = createTicket(parameters);
+        break;
+
+      case CREATE_TICKET_NG:
+        responseData = createTicketNG(parameters);
         break;
 
       case FETCH_ISSUE:
@@ -392,26 +397,16 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               .stream()
               .filter(map -> map.getValue().getFieldType().equals("user"))
               .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
-      if (!userTypeFields.isEmpty()) {
-        for (Entry<String, String> userField : userTypeFields.entrySet()) {
-          List<JiraUserData> userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
-          if (userDataList.isEmpty()) {
-            userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
-            if (userDataList.size() != 1) {
-              throw new InvalidRequestException("Found " + userDataList.size() + "jira user matches with this query for field: " + userField.getKey());
-            }
-            userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
-          }
-        }
-      }
+
+      updateUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
     }
 
-    Map<String, String> fieldsMap = JiraIssueUtilsNG.extractFieldsFromCGParameters(parameters, userTypeFields);
+    Map<String, String> fieldsMap = extractFieldsFromCGParameters(parameters, userTypeFields);
 
     for (String issueId : parameters.getUpdateIssueIds()) {
       try {
         JiraIssueNG issue = jiraNGClient.getIssue(issueId);
-        String issueProject = issue.getFields().get("project").toString();
+        String issueProject = issue.getFields().get("Project Key").toString();
 
         if (!issueProject.equals(parameters.getProject())) {
           return JiraExecutionData.builder()
@@ -457,7 +452,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  private DelegateResponseData updateTicketCG(JiraTaskParameters parameters) {
+  private DelegateResponseData updateTicket(JiraTaskParameters parameters) {
     JiraClient jiraClient;
     try {
       jiraClient = getJiraClient(parameters);
@@ -561,16 +556,6 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  private DelegateResponseData updateTicket(JiraTaskParameters parameters) {
-    DelegateResponseData delegateResponseData = null;
-    if (featureFlagService.isEnabled(FeatureName.USE_NG_JIRA_CLIENT_IN_CG, parameters.getAccountId())) {
-      delegateResponseData = null;
-    } else {
-      delegateResponseData = updateTicketCG(parameters);
-    }
-    return delegateResponseData;
-  }
-
   void updateUserTypeCustomFieldsIfPresent(
       JiraTaskParameters parameters, io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
     if (!userTypeFields.isEmpty()) {
@@ -665,59 +650,81 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     return e.getMessage();
   }
 
-  private JiraIssueNG createTicketNG(JiraTaskParameters parameters) {
+  private DelegateResponseData createTicketNG(JiraTaskParameters parameters) {
     io.harness.jira.JiraClient jira = getNGJiraClient(parameters);
-    return new JiraIssueNG();
-  }
-
-  private Issue createTicketCG(JiraTaskParameters parameters) throws JiraException {
-    JiraClient jira = getJiraClient(parameters);
-    Issue.FluentCreate fluentCreate = jira.createIssue(parameters.getProject(), parameters.getIssueType())
-        .field(Field.SUMMARY, parameters.getSummary());
-
-    if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
-      fluentCreate.field(Field.PRIORITY, parameters.getPriority());
-    }
-
-    if (EmptyPredicate.isNotEmpty(parameters.getDescription())) {
-      fluentCreate.field(Field.DESCRIPTION, parameters.getDescription());
-    }
-
-    if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
-      fluentCreate.field(Field.LABELS, parameters.getLabels());
-    }
+    Map<String, String> userTypeFields = null;
 
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-      setCustomFieldsOnCreate(parameters, fluentCreate);
+      userTypeFields =
+          parameters.getCustomFields()
+              .entrySet()
+              .stream()
+              .filter(map -> map.getValue().getFieldType().equals("user"))
+              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
+
+      updateUserTypeCustomFieldsIfPresent(parameters, jira, userTypeFields);
     }
 
-    log.info("Script execution finished with status SUCCESS");
-
-    return fluentCreate.execute();
-  }
-
-  private DelegateResponseData createTicket(JiraTaskParameters parameters) {
-    CommandExecutionStatus commandExecutionStatus;
-    Issue issue = null;
-    JiraIssueNG issueNG = null;
     try {
-      if (featureFlagService.isEnabled(FeatureName.USE_NG_JIRA_CLIENT_IN_CG, parameters.getAccountId())) {
-        issueNG = createTicketNG(parameters);
-      } else {
-        issue = createTicketCG(parameters);
-      }
-      String issueId = issue != null ? issue.getId() : issueNG.getId();
-      String issueKey = issue != null ? issue.getKey() : issueNG.getKey();
-      String issueDescription = issue != null ? issue.getDescription() : issueNG.getFields().getOrDefault("description", "").toString();
+      Map<String, String> fields = extractFieldsFromCGParameters(parameters, userTypeFields);
+      JiraIssueNG issue = jira.createIssue(parameters.getProject(), parameters.getIssueType(), fields);
+      log.info("Script execution finished with status SUCCESS");
 
       return JiraExecutionData.builder()
           .executionStatus(ExecutionStatus.SUCCESS)
           .jiraAction(JiraAction.CREATE_TICKET)
-          .errorMessage("Created Jira ticket " + issueKey)
-          .issueId(issueId)
-          .issueKey(issueKey)
-          .issueUrl(getIssueUrl(parameters.getJiraConfig(), issueKey))
-          .jiraIssueData(JiraIssueData.builder().description(issueDescription).build())
+          .errorMessage("Created Jira ticket " + issue.getKey())
+          .issueId(issue.getId())
+          .issueKey(issue.getKey())
+          .issueUrl(getIssueUrl(parameters.getJiraConfig(), issue.getKey()))
+          .jiraIssueData(JiraIssueData.builder().description(issue.getFields().getOrDefault("Description", "").toString()).build())
+          .build();
+    } catch (JiraClientException e) {
+      log.error("Unable to create a new Jira ticket", e);
+      return JiraExecutionData.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(
+              "Unable to create a new Jira ticket. " + ExceptionUtils.getMessage(e) + " " + extractResponseMessage(e))
+          .jiraServerResponse(extractResponseMessage(e))
+          .build();
+    }
+  }
+
+  private DelegateResponseData createTicket(JiraTaskParameters parameters) {
+    CommandExecutionStatus commandExecutionStatus;
+    try {
+      JiraClient jira = getJiraClient(parameters);
+      Issue.FluentCreate fluentCreate = jira.createIssue(parameters.getProject(), parameters.getIssueType())
+          .field(Field.SUMMARY, parameters.getSummary());
+
+      if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
+        fluentCreate.field(Field.PRIORITY, parameters.getPriority());
+      }
+
+      if (EmptyPredicate.isNotEmpty(parameters.getDescription())) {
+        fluentCreate.field(Field.DESCRIPTION, parameters.getDescription());
+      }
+
+      if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
+        fluentCreate.field(Field.LABELS, parameters.getLabels());
+      }
+
+      if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
+        setCustomFieldsOnCreate(parameters, fluentCreate);
+      }
+
+      Issue issue = fluentCreate.execute();
+
+      log.info("Script execution finished with status SUCCESS");
+
+      return JiraExecutionData.builder()
+          .executionStatus(ExecutionStatus.SUCCESS)
+          .jiraAction(JiraAction.CREATE_TICKET)
+          .errorMessage("Created Jira ticket " + issue.getKey())
+          .issueId(issue.getId())
+          .issueKey(issue.getKey())
+          .issueUrl(getIssueUrl(parameters.getJiraConfig(), issue.getKey()))
+          .jiraIssueData(JiraIssueData.builder().description(issue.getDescription()).build())
           .build();
     } catch (JiraException e) {
       log.error("Unable to create a new Jira ticket", e);
@@ -934,5 +941,39 @@ public class JiraTask extends AbstractDelegateRunnableTask {
       log.error(error, e);
       return JiraExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(error).build();
     }
+  }
+
+  private Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters, Map<String, String> userTypeFields) {
+    Map<String, String> fields = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
+      fields.put("Summary", parameters.getSummary());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
+      fields.put("Priority", parameters.getPriority());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getDescription())) {
+      fields.put("Description", parameters.getDescription());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getLabels())) {
+      String labels = Joiner.on(",").join(parameters.getLabels());
+      fields.put("Labels", labels);
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
+      for (Map.Entry<String, JiraCustomFieldValue> field : parameters.getCustomFields().entrySet()) {
+        fields.put(field.getKey(), field.getValue().getFieldValue());
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getComment())) {
+      fields.put("Comment", parameters.getComment());
+    }
+    if (EmptyPredicate.isNotEmpty(parameters.getStatus())) {
+      fields.put("Status", parameters.getStatus());
+    }
+    if (EmptyPredicate.isNotEmpty(userTypeFields)) {
+      for (Map.Entry<String, String> userField : userTypeFields.entrySet()) {
+        fields.put(userField.getKey(), userField.getValue());
+      }
+    }
+    return fields;
   }
 }
