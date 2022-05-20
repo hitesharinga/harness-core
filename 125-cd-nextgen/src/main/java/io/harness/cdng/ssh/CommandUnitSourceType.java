@@ -9,19 +9,22 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.walktree.visitor.validation.ConfigValidator;
-import io.harness.walktree.visitor.validation.ValidationVisitor;
+import io.harness.ssh.FileSourceType;
 
 @OwnedBy(CDP)
-public class ExecuteCommandStepInfoVisitorHelper implements ConfigValidator {
-  @Override
-  public Object createDummyVisitableElement(Object originalElement) {
-    return ExecuteCommandStepInfo.infoBuilder().build();
+@RecasterAlias("io.harness.cdng.ssh.CommandUnitSourceType")
+public enum CommandUnitSourceType {
+  Artifact(FileSourceType.ARTIFACT),
+  Config(FileSourceType.CONFIG);
+
+  private final FileSourceType sourceType;
+  CommandUnitSourceType(FileSourceType sourceType) {
+    this.sourceType = sourceType;
   }
 
-  @Override
-  public void validate(Object object, ValidationVisitor visitor) {
-    // Nothing to validate.
+  public FileSourceType getFileSourceType() {
+    return sourceType;
   }
 }

@@ -26,7 +26,6 @@ import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
-import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,11 +57,11 @@ public class SshUtilsTest extends CategoryTest {
         SshCommandTaskParameters.builder()
             .accountId(accountId)
             .executionId(executionId)
-            .workingDirectory(workingDir)
-            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList(host)).build())
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+            .host(host)
             .build();
 
-    SshUtils.generateSshSessionConfig(sshSessionConfigMapper, commandTaskParameters, commandUnitName);
+    SshUtils.generateSshSessionConfig(sshSessionConfigMapper, commandTaskParameters, commandUnitName, workingDir);
     assertThat(sessionConfig.getAccountId()).isEqualTo(accountId);
     assertThat(sessionConfig.getExecutionId()).isEqualTo(executionId);
     assertThat(sessionConfig.getWorkingDirectory()).isEqualTo(workingDir);

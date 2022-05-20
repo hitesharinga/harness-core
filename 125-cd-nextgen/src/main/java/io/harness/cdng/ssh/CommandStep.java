@@ -39,13 +39,12 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
-public class ExecuteCommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskResponse> {
-  public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.EXECUTE_COMMAND.getYamlType())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
+public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskResponse> {
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(ExecutionNodeType.COMMAND.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
@@ -64,7 +63,7 @@ public class ExecuteCommandStep extends TaskExecutableWithRollbackAndRbac<Comman
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    ExecuteCommandStepParameters executeCommandStepParameters = (ExecuteCommandStepParameters) stepParameters.getSpec();
+    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
 
     SshCommandTaskParameters taskParameters =
         sshCommandStepHelper.buildSshCommandTaskParameters(ambiance, executeCommandStepParameters);
@@ -76,9 +75,11 @@ public class ExecuteCommandStep extends TaskExecutableWithRollbackAndRbac<Comman
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
+
+    List<String> commandExecutionUnits =
+        taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
     String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        executeCommandStepParameters.getCommandUnits(), taskName,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
             TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
   }

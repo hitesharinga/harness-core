@@ -5,19 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.ssh;
+package io.harness.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
-
-@OwnedBy(CDP)
-public interface SshSpecParameters extends SpecParameters {
-  @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
-}
+@OwnedBy(CDP) public enum FileSourceType { ARTIFACT, CONFIG }

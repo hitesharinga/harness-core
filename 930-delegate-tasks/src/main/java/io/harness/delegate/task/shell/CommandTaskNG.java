@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -20,34 +19,22 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.utils.SshUtils;
+import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.shell.AbstractScriptExecutor;
-import io.harness.shell.ExecuteCommandResponse;
-import io.harness.shell.ScriptProcessExecutor;
-import io.harness.shell.ScriptSshExecutor;
-import io.harness.shell.ShellExecutorConfig;
-import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
-import io.harness.ssh.SshCommandUnitConstants;
 
 import com.google.inject.Inject;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 @OwnedBy(CDP)
 public class CommandTaskNG extends AbstractDelegateRunnableTask {
-  @Inject private SshExecutorFactoryNG sshExecutorFactoryNG;
-  @Inject private ShellExecutorFactoryNG shellExecutorFactory;
-  @Inject private SshSessionConfigMapper sshSessionConfigMapper;
-  @Inject private SshInitCommandHandler sshInitCommandHandler;
-  @Inject private SshCleanupCommandHandler sshCleanupCommandHandler;
+  @Inject private Map<String, CommandHandler> commandUnitHandlers;
 
   public CommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -74,33 +61,19 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   private DelegateResponseData runSsh(SshCommandTaskParameters parameters) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
-    Function<String, AbstractScriptExecutor> getExecutorFun =
-        commandUnit -> getExecutor(parameters, commandUnit, commandUnitsProgress);
-
     try {
-      AbstractScriptExecutor initExecutor = getExecutorFun.apply(SshCommandUnitConstants.Init);
-      String script = sshInitCommandHandler.prepareScript(parameters, initExecutor);
-
-      AbstractScriptExecutor executor = getExecutorFun.apply(SshCommandUnitConstants.Exec);
-      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(script, Collections.emptyList());
-
-      // if cleanup fails then the execution command should not fail
-      try {
-        AbstractScriptExecutor cleanupExecutor = getExecutorFun.apply(SshCommandUnitConstants.Cleanup);
-        sshCleanupCommandHandler.cleanup(parameters, cleanupExecutor);
-      } catch (Exception e) {
-        log.error("Failed to cleanup ssh", e);
-      } finally {
-        List<String> hosts = parameters.getSshInfraDelegateConfig().getHosts();
-        if (!parameters.executeOnDelegate && isNotEmpty(hosts)) {
-          SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), hosts.get(0));
+      CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
+      for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
+        CommandHandler handler = commandUnitHandlers.get(commandUnit.getCommandUnitType());
+        status = handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress);
+        if (CommandExecutionStatus.FAILURE.equals(status)) {
+          break;
         }
       }
 
       return CommandTaskResponse.builder()
-          .executeCommandResponse(executeCommandResponse)
-          .status(executeCommandResponse.getStatus())
-          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+          .status(status)
+          .errorMessage(getErrorMessage(status))
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
 
@@ -111,37 +84,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
           .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
+    } finally {
+      if (!parameters.executeOnDelegate && isNotEmpty(parameters.getHost())) {
+        SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
+      }
     }
-  }
-
-  private ScriptSshExecutor getScriptSshExecutor(
-      SshCommandTaskParameters parameters, String commandUnit, CommandUnitsProgress commandUnitsProgress) {
-    SshSessionConfig sshSessionConfig =
-        SshUtils.generateSshSessionConfig(sshSessionConfigMapper, parameters, commandUnit);
-    return sshExecutorFactoryNG.getExecutor(sshSessionConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
-  }
-
-  private ScriptProcessExecutor getScriptProcessExecutor(
-      SshCommandTaskParameters parameters, String commandUnit, CommandUnitsProgress commandUnitsProgress) {
-    ShellExecutorConfig config = getShellExecutorConfig(parameters, commandUnit);
-    return shellExecutorFactory.getExecutor(config, this.getLogStreamingTaskClient(), commandUnitsProgress);
-  }
-
-  private AbstractScriptExecutor getExecutor(
-      SshCommandTaskParameters parameters, String commandUnit, CommandUnitsProgress commandUnitsProgress) {
-    return parameters.executeOnDelegate ? getScriptProcessExecutor(parameters, commandUnit, commandUnitsProgress)
-                                        : getScriptSshExecutor(parameters, commandUnit, commandUnitsProgress);
-  }
-
-  private ShellExecutorConfig getShellExecutorConfig(SshCommandTaskParameters taskParameters, String commandUnit) {
-    return ShellExecutorConfig.builder()
-        .accountId(taskParameters.getAccountId())
-        .executionId(taskParameters.getExecutionId())
-        .commandUnitName(commandUnit)
-        .workingDirectory(taskParameters.getWorkingDirectory())
-        .environment(taskParameters.getEnvironmentVariables())
-        .scriptType(taskParameters.getScriptType())
-        .build();
   }
 
   private String getErrorMessage(CommandExecutionStatus status) {

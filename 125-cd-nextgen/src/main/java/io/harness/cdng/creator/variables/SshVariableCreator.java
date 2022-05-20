@@ -20,6 +20,6 @@ import java.util.Set;
 public class SshVariableCreator extends GenericStepVariableCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return new HashSet<>(Arrays.asList(StepSpecTypeConstants.EXECUTE_COMMAND));
+    return new HashSet<>(Arrays.asList(StepSpecTypeConstants.COMMAND));
   }
 }

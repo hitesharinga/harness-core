@@ -13,9 +13,8 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.ShellType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -28,16 +27,17 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("ExecuteCommandStepParameters")
-@RecasterAlias("io.harness.cdng.ssh.ExecuteCommandStepParameters")
-public class ExecuteCommandStepParameters extends ExecuteCommandBaseStepInfo implements SshSpecParameters {
+@TypeAlias("CommandStepParameters")
+@RecasterAlias("io.harness.cdng.ssh.CommandStepParameters")
+public class CommandStepParameters extends CommandBaseStepInfo implements SshSpecParameters {
   Map<String, Object> environmentVariables;
+  @JsonIgnore String host;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ExecuteCommandStepParameters(ShellType shell, ShellScriptSourceWrapper source, List<TailFilePattern> tailFiles,
-                                      ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                      ParameterField<String> workingDirectory, Map<String, Object> environmentVariables) {
-    super(shell, source, tailFiles, onDelegate, delegateSelectors, workingDirectory);
+  public CommandStepParameters(ParameterField<Boolean> onDelegate,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
+      List<CommandUnitWrapper> commandUnits) {
+    super(onDelegate, delegateSelectors, commandUnits);
     this.environmentVariables = environmentVariables;
   }
 }

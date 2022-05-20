@@ -12,10 +12,11 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.expression.Expression;
-import io.harness.shell.ScriptType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder.Default;
@@ -28,11 +29,9 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @OwnedBy(CDP)
 public abstract class CommandTaskParameters implements TaskParameters {
-  @Expression(ALLOW_SECRETS) String script;
   String accountId;
   String executionId;
-  String workingDirectory;
   @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
-  ScriptType scriptType;
   boolean executeOnDelegate;
+  List<NgCommandUnit> commandUnits;
 }

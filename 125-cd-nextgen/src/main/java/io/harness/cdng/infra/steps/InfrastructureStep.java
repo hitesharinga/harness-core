@@ -56,6 +56,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
@@ -133,7 +134,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
-    publishInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+    publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
     ngManagerLogCallback.saveExecutionLog(
         "Infrastructure Step completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     return StepResponse.builder()
@@ -152,7 +153,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         .build();
   }
 
-  private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+  private void publishInfraDelegateConfigOutput(
+      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
+      publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+    }
+
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -163,22 +169,17 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
           k8sInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
     }
-
-    if (infrastructureOutcome instanceof PdcInfrastructureOutcome) {
-      publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
-    }
   }
 
   private void publishSshInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
     SshInfraDelegateConfig sshInfraDelegateConfig =
-            k8sStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
+        k8sStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
 
     SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
-            SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
+        SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
-            sshInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
+        sshInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
   }
-
 
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {

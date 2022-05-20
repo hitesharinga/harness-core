@@ -1068,6 +1068,91 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CommandStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "onDelegate"
+          ],
+          "properties": {
+            "commandUnits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CommandUnitWrapper"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "onDelegate": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommandUnitBaseSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommandUnitWrapper": {
+      "type": "object",
+      "properties": {
+        "commandUnit": {
+          "$ref": "#/definitions/StepCommandUnit"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Condition": {
       "type": "object",
       "required": [
@@ -1092,6 +1177,33 @@
           "minLength": 1
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CopyCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "destinationPath",
+            "sourceType"
+          ],
+          "properties": {
+            "destinationPath": {
+              "type": "string"
+            },
+            "sourceType": {
+              "type": "string",
+              "enum": [
+                "Artifact",
+                "Config"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CountInstanceSelection": {
@@ -1655,94 +1767,6 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ExecuteCommandStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "onDelegate",
-            "shell",
-            "source"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "environmentVariables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
-            },
-            "metadata": {
-              "type": "string"
-            },
-            "onDelegate": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "shell": {
-              "type": "string",
-              "enum": [
-                "Bash",
-                "PowerShell"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/ShellScriptSourceWrapper"
-            },
-            "tailFiles": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TailFilePattern"
-              }
-            },
-            "workingDirectory": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ExecutionElementConfig": {
@@ -5253,6 +5277,42 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScriptCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "shell",
+            "source"
+          ],
+          "properties": {
+            "shell": {
+              "type": "string",
+              "enum": [
+                "Bash",
+                "PowerShell"
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            },
+            "tailFiles": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TailFilePattern"
+              }
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "S3UrlCloudformationTemplateFileSpec": {
       "allOf": [
         {
@@ -6521,6 +6581,55 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StepCommandUnit": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Copy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CopyCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Script"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ScriptCommandUnitSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
     "StepElementConfig": {
       "type": "object",
       "required": [
@@ -6611,14 +6720,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "ExecuteCommand"
+                "const": "Command"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/ExecuteCommandStepInfo"
+                "$ref": "#/definitions/CommandStepInfo"
               }
             }
           }

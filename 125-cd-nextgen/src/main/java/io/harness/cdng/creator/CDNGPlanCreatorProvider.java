@@ -27,7 +27,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.ExecuteCommandStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.CommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
@@ -141,7 +141,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
     planCreators.add(new CloudformationDeleteStackStepPlanCreator());
     planCreators.add(new CloudformationRollbackStackStepPlanCreator());
-    planCreators.add(new ExecuteCommandStepPlanCreator());
+    planCreators.add(new CommandStepPlanCreator());
     planCreators.add(new SpecNodePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -321,8 +321,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo executeCommand =
         StepInfo.newBuilder()
-            .setName("Execute Command")
-            .setType(StepSpecTypeConstants.EXECUTE_COMMAND)
+            .setName("Command")
+            .setType(StepSpecTypeConstants.COMMAND)
             //                    .setFeatureRestrictionName(FeatureRestrictionName.SSH.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())

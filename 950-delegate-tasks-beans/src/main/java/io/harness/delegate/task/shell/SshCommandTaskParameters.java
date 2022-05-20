@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 
-import java.util.List;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -21,5 +20,5 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(CDP)
 public class SshCommandTaskParameters extends CommandTaskParameters {
   SshInfraDelegateConfig sshInfraDelegateConfig;
-  List<TailFilePatternDto> tailFilePatterns;
+  String host;
 }

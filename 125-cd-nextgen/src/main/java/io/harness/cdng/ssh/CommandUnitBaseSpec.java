@@ -9,15 +9,15 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.yaml.ParameterField;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
+import io.harness.annotations.dev.OwnedBy;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(CDP)
-public interface SshSpecParameters extends SpecParameters {
-  @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
+@JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+public interface CommandUnitBaseSpec {
+  String getType();
 }

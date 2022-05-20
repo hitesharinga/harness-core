@@ -53,16 +53,16 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
-public class ExecuteCommandStepTest extends CategoryTest {
+public class CommandStepTest extends CategoryTest {
   @Mock private SshCommandStepHelper sshCommandStepHelper;
   @Mock private StepHelper stepHelper;
   @Mock private KryoSerializer kryoSerializer;
 
-  @InjectMocks private ExecuteCommandStep executeCommandStep;
+  @InjectMocks private CommandStep commandStep;
 
   private final String accountId = "accountId";
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-  private final ExecuteCommandStepParameters commandStepParameters = ExecuteCommandStepParameters.infoBuilder().build();
+  private final CommandStepParameters commandStepParameters = CommandStepParameters.infoBuilder().build();
   private SshCommandTaskParameters sshCommandTaskParameters =
       SshCommandTaskParameters.builder()
           .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
@@ -93,7 +93,7 @@ public class ExecuteCommandStepTest extends CategoryTest {
                                                             .build();
 
     TaskRequest taskRequest =
-        executeCommandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+        commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
     verify(sshCommandStepHelper, times(1)).buildSshCommandTaskParameters(ambiance, commandStepParameters);
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
@@ -116,8 +116,8 @@ public class ExecuteCommandStepTest extends CategoryTest {
     CommandTaskResponse commandTaskResponse =
         CommandTaskResponse.builder().status(CommandExecutionStatus.SUCCESS).unitProgressData(unitProgressData).build();
 
-    StepResponse stepResponse = executeCommandStep.handleTaskResultWithSecurityContext(
-        ambiance, stepElementParameters, () -> commandTaskResponse);
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> commandTaskResponse);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
@@ -142,8 +142,8 @@ public class ExecuteCommandStepTest extends CategoryTest {
                                                   .unitProgressData(unitProgressData)
                                                   .build();
 
-    StepResponse stepResponse = executeCommandStep.handleTaskResultWithSecurityContext(
-        ambiance, stepElementParameters, () -> commandTaskResponse);
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> commandTaskResponse);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);

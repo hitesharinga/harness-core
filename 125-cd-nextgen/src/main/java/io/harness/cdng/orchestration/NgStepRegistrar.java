@@ -52,7 +52,7 @@ import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
-import io.harness.cdng.ssh.ExecuteCommandStep;
+import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -110,7 +110,7 @@ public class NgStepRegistrar {
     engineSteps.put(CloudformationRollbackStep.STEP_TYPE, CloudformationRollbackStep.class);
     engineSteps.put(ServerlessAwsLambdaDeployStep.STEP_TYPE, ServerlessAwsLambdaDeployStep.class);
     engineSteps.put(ServerlessAwsLambdaRollbackStep.STEP_TYPE, ServerlessAwsLambdaRollbackStep.class);
-    engineSteps.put(ExecuteCommandStep.STEP_TYPE, ExecuteCommandStep.class);
+    engineSteps.put(CommandStep.STEP_TYPE, CommandStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

@@ -42,7 +42,7 @@ public interface YamlTypes {
 
   String SERVERLESS_AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY;
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
-  String EXECUTE_COMMAND = StepSpecTypeConstants.EXECUTE_COMMAND;
+  String COMMAND = StepSpecTypeConstants.COMMAND;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";

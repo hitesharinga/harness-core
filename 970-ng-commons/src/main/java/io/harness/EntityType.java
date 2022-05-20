@@ -239,9 +239,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.INFRASTRUCTURE)
   INFRASTRUCTURE(
       ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE),
-  @JsonProperty(EntityTypeConstants.EXECUTE_COMMAND)
-  EXECUTE_COMMAND_STEP(
-          ModuleType.CD, EntityTypeConstants.EXECUTE_COMMAND, IdentifierRef.class, EntityYamlRootNames.EXECUTE_COMMAND);
+  @JsonProperty(EntityTypeConstants.COMMAND)
+  COMMAND_STEP(
+          ModuleType.CD, EntityTypeConstants.COMMAND, IdentifierRef.class, EntityYamlRootNames.COMMAND);
 
 
   private final ModuleType moduleType;

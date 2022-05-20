@@ -22,7 +22,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
+import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
@@ -97,23 +99,33 @@ public class SshCommandStepHelperTest extends CategoryTest {
     env.put("key", "val");
 
     ParameterField workingDirParam = ParameterField.createValueField(workingDir);
-    ExecuteCommandStepParameters stepParameters =
-        ExecuteCommandStepParameters.infoBuilder()
-            .shell(ShellType.Bash)
+    CommandStepParameters stepParameters =
+        CommandStepParameters.infoBuilder()
+            .commandUnits(Arrays.asList(
+                CommandUnitWrapper.builder()
+                    .commandUnit(
+                        StepCommandUnit.builder()
+                            .type(CommandUnitSpecType.SCRIPT)
+                            .spec(ScriptCommandUnitSpec.builder()
+                                      .tailFiles(Arrays.asList(
+                                          TailFilePattern.builder()
+                                              .tailFile(ParameterField.createValueField("nohup.out"))
+                                              .tailPattern(ParameterField.createValueField("*Successfull"))
+                                              .build()))
+                                      .shell(ShellType.Bash)
+                                      .workingDirectory(workingDirParam)
+                                      .source(ShellScriptSourceWrapper.builder()
+                                                  .spec(ShellScriptInlineSource.builder()
+                                                            .script(ParameterField.createValueField("echo Test"))
+                                                            .build())
+                                                  .type("Inline")
+                                                  .build())
+                                      .build())
+                            .build())
+                    .build()))
             .environmentVariables(env)
-            .workingDirectory(workingDirParam)
-            .tailFiles(Arrays.asList(TailFilePattern.builder()
-                                         .tailFile(ParameterField.createValueField("nohup.out"))
-                                         .tailPattern(ParameterField.createValueField("*Successfull"))
-                                         .build()))
             .delegateSelectors(ParameterField.createValueField(Arrays.asList(new TaskSelectorYaml("ssh-delegate"))))
             .onDelegate(ParameterField.createValueField(false))
-            .source(
-                ShellScriptSourceWrapper.builder()
-                    .spec(
-                        ShellScriptInlineSource.builder().script(ParameterField.createValueField("echo Test")).build())
-                    .type("Inline")
-                    .build())
             .build();
 
     doReturn(workingDir)
@@ -124,11 +136,16 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(taskParameters).isNotNull();
     assertThat(taskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);
-    assertThat(taskParameters.getWorkingDirectory()).isEqualTo(workingDir);
-    assertThat(taskParameters.getScript()).isEqualTo("echo Test");
-    assertThat(taskParameters.getScriptType()).isEqualTo(ScriptType.BASH);
-    assertThat(taskParameters.getTailFilePatterns().get(0).getFilePath()).isEqualTo("nohup.out");
-    assertThat(taskParameters.getTailFilePatterns().get(0).getPattern()).isEqualTo("*Successfull");
+    assertThat(taskParameters.getCommandUnits()).isNotEmpty();
+    assertThat(taskParameters.getCommandUnits().size()).isOne();
+    NgCommandUnit commandUnit = taskParameters.getCommandUnits().get(0);
+    assertThat(commandUnit).isInstanceOf(ScriptCommandUnit.class);
+    ScriptCommandUnit scriptCommandUnit = (ScriptCommandUnit) commandUnit;
+    assertThat(scriptCommandUnit.getWorkingDirectory()).isEqualTo(workingDir);
+    assertThat(scriptCommandUnit.getScript()).isEqualTo("echo Test");
+    assertThat(scriptCommandUnit.getScriptType()).isEqualTo(ScriptType.BASH);
+    assertThat(scriptCommandUnit.getTailFilePatterns().get(0).getFilePath()).isEqualTo("nohup.out");
+    assertThat(scriptCommandUnit.getTailFilePatterns().get(0).getPattern()).isEqualTo("*Successfull");
     assertThat(taskParameters.getEnvironmentVariables()).isEqualTo(taskEnv);
   }
 }

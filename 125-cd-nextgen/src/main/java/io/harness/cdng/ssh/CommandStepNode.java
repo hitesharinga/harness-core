@@ -31,27 +31,27 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.EXECUTE_COMMAND)
-@TypeAlias("ExecuteCommandStepNode")
+@JsonTypeName(StepSpecTypeConstants.COMMAND)
+@TypeAlias("CommandStepNode")
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.ssh.ExecuteCommandStepNode")
-public class ExecuteCommandStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.ExecuteCommand;
+@RecasterAlias("io.harness.cdng.ssh.CommandStepNode")
+public class CommandStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull StepType type = StepType.Command;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ExecuteCommandStepInfo executeCommandStepInfo;
+  CommandStepInfo commandStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.EXECUTE_COMMAND;
+    return StepSpecTypeConstants.COMMAND;
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return executeCommandStepInfo;
+    return commandStepInfo;
   }
 
   enum StepType {
-    ExecuteCommand(StepSpecTypeConstants.EXECUTE_COMMAND);
+    Command(StepSpecTypeConstants.COMMAND);
     @Getter String name;
     StepType(String name) {
       this.name = name;

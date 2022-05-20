@@ -12,14 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.visitor.helpers.cdstepinfo.CommandStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.ShellType;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.NGVariable;
@@ -38,25 +37,24 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.EXECUTE_COMMAND)
-@SimpleVisitorHelper(helperClass = ExecuteCommandStepInfoVisitorHelper.class)
-@TypeAlias("executeCommandStepInfo")
-@RecasterAlias("io.harness.cdng.ssh.ExecuteCommandStepInfo")
-public class ExecuteCommandStepInfo extends ExecuteCommandBaseStepInfo implements CDStepInfo, Visitable {
+@JsonTypeName(StepSpecTypeConstants.COMMAND)
+@SimpleVisitorHelper(helperClass = CommandStepInfoVisitorHelper.class)
+@TypeAlias("commandStepInfo")
+@RecasterAlias("io.harness.cdng.ssh.CommandStepInfo")
+public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, Visitable {
   List<NGVariable> environmentVariables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ExecuteCommandStepInfo(ShellType shell, ShellScriptSourceWrapper source, List<TailFilePattern> tailFiles,
-                                ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                ParameterField<String> workingDirectory, List<NGVariable> environmentVariables) {
-    super(shell, source, tailFiles, onDelegate, delegateSelectors, workingDirectory);
+  public CommandStepInfo(ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      List<NGVariable> environmentVariables, List<CommandUnitWrapper> commandUnits) {
+    super(onDelegate, delegateSelectors, commandUnits);
     this.environmentVariables = environmentVariables;
   }
 
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return ExecuteCommandStep.STEP_TYPE;
+    return CommandStep.STEP_TYPE;
   }
 
   @Override
@@ -67,14 +65,11 @@ public class ExecuteCommandStepInfo extends ExecuteCommandBaseStepInfo implement
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ExecuteCommandStepParameters.infoBuilder()
+    return CommandStepParameters.infoBuilder()
         .onDelegate(getOnDelegate())
-        .shell(getShell())
-        .source(getSource())
-        .tailFiles(getTailFiles())
         .delegateSelectors(getDelegateSelectors())
-        .workingDirectory(getWorkingDirectory())
         .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
+        .commandUnits(getCommandUnits())
         .build();
   }
 

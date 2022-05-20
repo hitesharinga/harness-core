@@ -10,14 +10,9 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.yaml.ParameterField;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
 
 @OwnedBy(CDP)
-public interface SshSpecParameters extends SpecParameters {
-  @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
+public interface CommandUnitSpecType {
+  String SCRIPT = "Script";
+  String COPY = "Copy";
 }

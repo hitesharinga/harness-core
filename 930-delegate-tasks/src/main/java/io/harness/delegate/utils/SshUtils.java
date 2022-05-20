@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.SshSessionConfigMapperFields;
+import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.shell.SshSessionConfig;
 
 import lombok.AccessLevel;
@@ -34,17 +35,17 @@ public final class SshUtils {
     return sshSessionConfig;
   }
 
-  public static SshSessionConfig generateSshSessionConfig(
-      SshSessionConfigMapper sshSessionConfigMapper, SshCommandTaskParameters taskParameters, String commandUnit) {
+  public static SshSessionConfig generateSshSessionConfig(SshSessionConfigMapper sshSessionConfigMapper,
+      SshCommandTaskParameters taskParameters, String commandUnitName, String workingDir) {
     SshSessionConfig sshSessionConfig =
         sshSessionConfigMapper.getSSHSessionConfig(taskParameters.getSshInfraDelegateConfig().getSshKeySpecDto(),
             taskParameters.getSshInfraDelegateConfig().getEncryptionDataDetails());
 
     sshSessionConfig.setAccountId(taskParameters.getAccountId());
     sshSessionConfig.setExecutionId(taskParameters.getExecutionId());
-    sshSessionConfig.setHost(taskParameters.getSshInfraDelegateConfig().getHosts().get(0));
-    sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
-    sshSessionConfig.setCommandUnitName(commandUnit);
+    sshSessionConfig.setHost(taskParameters.getHost());
+    sshSessionConfig.setWorkingDirectory(workingDir);
+    sshSessionConfig.setCommandUnitName(commandUnitName);
 
     return sshSessionConfig;
   }

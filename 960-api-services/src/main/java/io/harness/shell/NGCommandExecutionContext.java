@@ -5,14 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ssh;
+package io.harness.shell;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
-import io.harness.annotations.dev.OwnedBy;
-
-@OwnedBy(CDP)
-public interface SshCommandUnitConstants {
-  String Init = "Initialize";
-  String Cleanup = "Cleanup";
+public class NGCommandExecutionContext {
+  BaseScriptExecutor scriptExecutor;
 }

@@ -38,5 +38,5 @@ public interface StepSpecTypeConstants {
 
   String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
-  String EXECUTE_COMMAND = "ExecuteCommand";
+  String COMMAND = "Command";
 }

@@ -5,19 +5,27 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.ssh;
+package io.harness.delegate.task.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.ssh.SshCommandUnitConstants;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
+@Builder
+@Value
 @OwnedBy(CDP)
-public interface SshSpecParameters extends SpecParameters {
-  @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
+public class NgInitCommandUnit implements NgCommandUnit {
+  @Override
+  public String getName() {
+    return SshCommandUnitConstants.Init;
+  }
+
+  @Override
+  public String getCommandUnitType() {
+    return NGCommandUnitType.INIT;
+  }
 }

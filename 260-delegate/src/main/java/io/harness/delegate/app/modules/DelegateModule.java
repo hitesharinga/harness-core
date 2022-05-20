@@ -229,6 +229,12 @@ import io.harness.delegate.task.servicenow.ServiceNowValidationHandler;
 import io.harness.delegate.task.servicenow.connection.ServiceNowTestConnectionTaskNG;
 import io.harness.delegate.task.shell.CommandTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshScriptCommandHandler;
+import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
@@ -1241,6 +1247,14 @@ public class DelegateModule extends AbstractModule {
         .to(ServerlessAwsLambdaDeployCommandTaskHandler.class);
     serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK.name())
         .to(ServerlessAwsLambdaRollbackCommandTaskHandler.class);
+
+    // Ssh and WinRM task handlers
+      MapBinder<String, CommandHandler> commandUnitHandlers =
+              MapBinder.newMapBinder(binder(), String.class, CommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.INIT).to(SshInitCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.SCRIPT).to(SshScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.COPY).to(SshCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.CLEANUP).to(SshCleanupCommandHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();

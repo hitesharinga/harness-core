@@ -18,14 +18,21 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters.SshCommandTaskParametersBuilder;
 import io.harness.delegate.task.shell.TailFilePatternDto;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
+import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.NgInitCommandUnit;
+import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptHelperService;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
+import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,32 +45,83 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private SshEntityHelper sshEntityHelper;
 
   public SshCommandTaskParameters buildSshCommandTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull ExecuteCommandStepParameters executeCommandStepParameters) {
-    ScriptType scriptType = executeCommandStepParameters.getShell().getScriptType();
+      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters executeCommandStepParameters) {
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Boolean onDelegate = getBooleanParameterFieldValue(executeCommandStepParameters.onDelegate);
     SshCommandTaskParametersBuilder<?, ?> builder = SshCommandTaskParameters.builder();
     return builder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .script(getShellScript(executeCommandStepParameters))
-        .scriptType(executeCommandStepParameters.getShell().getScriptType())
-        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
-            executeCommandStepParameters.getWorkingDirectory(), scriptType, onDelegate))
-        .tailFilePatterns(mapTailFilePatterns(executeCommandStepParameters))
         .environmentVariables(
             shellScriptHelperService.getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
+        .commandUnits(mapCommandUnits(executeCommandStepParameters.getCommandUnits(), onDelegate))
+        .host(executeCommandStepParameters.getHost())
         .build();
   }
 
-  private List<TailFilePatternDto> mapTailFilePatterns(@Nonnull ExecuteCommandStepParameters stepParameters) {
-    if (isEmpty(stepParameters.getTailFiles())) {
+  private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
+    if (isEmpty(stepCommandUnits)) {
+      throw new InvalidRequestException("No command units found for configured step");
+    }
+    List<NgCommandUnit> commandUnits = new ArrayList<>(stepCommandUnits.size() + 2);
+    commandUnits.add(NgInitCommandUnit.builder().build());
+
+    List<NgCommandUnit> commandUnitsFromStep =
+        stepCommandUnits.stream()
+            .map(stepCommandUnit
+                -> (stepCommandUnit.isScript()) ? mapScriptCommandUnit(stepCommandUnit.getCommandUnit(), onDelegate)
+                                                : mapCopyCommandUnit(stepCommandUnit.getCommandUnit()))
+            .collect(Collectors.toList());
+
+    commandUnits.addAll(commandUnitsFromStep);
+    commandUnits.add(NgCleanupCommandUnit.builder().build());
+    return commandUnits;
+  }
+
+  private ScriptCommandUnit mapScriptCommandUnit(StepCommandUnit stepCommandUnit, boolean onDelegate) {
+    if (stepCommandUnit == null) {
+      throw new InvalidRequestException("Invalid command unit format specified");
+    }
+
+    if (!(stepCommandUnit.getSpec() instanceof ScriptCommandUnitSpec)) {
+      throw new InvalidRequestException("Invalid script command unit specified");
+    }
+
+    ScriptCommandUnitSpec spec = (ScriptCommandUnitSpec) stepCommandUnit.getSpec();
+    return ScriptCommandUnit.builder()
+        .name(stepCommandUnit.getName())
+        .script(getShellScript(spec.getSource()))
+        .scriptType(spec.getShell().getScriptType())
+        .tailFilePatterns(mapTailFilePatterns(spec.getTailFiles()))
+        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
+            spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
+        .build();
+  }
+
+  private CopyCommandUnit mapCopyCommandUnit(StepCommandUnit stepCommandUnit) {
+    if (stepCommandUnit == null) {
+      throw new InvalidRequestException("Invalid command unit format specified");
+    }
+
+    if (!(stepCommandUnit.getSpec() instanceof CopyCommandUnitSpec)) {
+      throw new InvalidRequestException("Invalid copy command unit specified");
+    }
+
+    CopyCommandUnitSpec spec = (CopyCommandUnitSpec) stepCommandUnit.getSpec();
+    return CopyCommandUnit.builder()
+        .name(stepCommandUnit.getName())
+        .sourceType(spec.getSourceType().getFileSourceType())
+        .destinationPath(getParameterFieldValue(spec.getDestinationPath()))
+        .build();
+  }
+
+  private List<TailFilePatternDto> mapTailFilePatterns(@Nonnull List<TailFilePattern> tailFiles) {
+    if (isEmpty(tailFiles)) {
       return Collections.emptyList();
     }
 
-    return stepParameters.getTailFiles()
-        .stream()
+    return tailFiles.stream()
         .map(it
             -> TailFilePatternDto.builder()
                    .filePath(getParameterFieldValue(it.getTailFile()))
@@ -72,8 +130,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  private String getShellScript(@Nonnull ExecuteCommandStepParameters stepParameters) {
-    ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) stepParameters.getSource().getSpec();
+  private String getShellScript(@Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
+    ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
     return (String) shellScriptInlineSource.getScript().fetchFinalValue();
   }
 }
