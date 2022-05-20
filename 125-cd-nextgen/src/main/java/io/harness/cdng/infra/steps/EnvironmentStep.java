@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.InfraStepUtils;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -37,25 +36,21 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.ENVIRONMENT.getName()).setStepCategory(StepCategory.STEP).build();
 
-  @Inject private InfrastructureSectionHelper infrastructureSectionHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private EnvironmentService environmentService;
 
   @Override
   public void validateResources(Ambiance ambiance, InfraSectionStepParameters stepParameters) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance, true);
-    saveExecutionLog(logCallback, "Starting infrastructure step...");
     InfraStepUtils.validateResources(accessControlClient, ambiance, stepParameters);
   }
 
   @Override
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, InfraSectionStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     log.info("Starting execution for InfraSection Step [{}]", stepParameters);
     EnvironmentOutcome environmentOutcome = InfraStepUtils.processEnvironment(
-        environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), logCallback);
+        environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef());
     executionSweepingOutputResolver.consume(
         ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepOutcomeGroup.STAGE.name());
     return StepResponse.builder().status(Status.SUCCEEDED).build();
@@ -64,11 +59,5 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   @Override
   public Class<InfraSectionStepParameters> getStepParametersClass() {
     return InfraSectionStepParameters.class;
-  }
-
-  private void saveExecutionLog(NGLogCallback logCallback, String line) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(line);
-    }
   }
 }

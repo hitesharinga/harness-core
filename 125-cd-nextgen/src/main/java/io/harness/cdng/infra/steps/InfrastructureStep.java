@@ -117,7 +117,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance, true);
+    saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
     validateInfrastructure(infrastructure);

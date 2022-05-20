@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.EnvironmentMapper;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.steps.InfrastructureSectionHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -35,12 +36,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.inject.Inject;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfraStepUtils {
+  @Inject private InfrastructureSectionHelper infrastructureSectionHelper;
+
   public void validateResources(
       AccessControlClient accessControlClient, Ambiance ambiance, InfraSectionStepParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
@@ -70,7 +74,8 @@ public class InfraStepUtils {
   }
 
   public EnvironmentOutcome processEnvironment(EnvironmentService environmentService, Ambiance ambiance,
-      EnvironmentYaml environmentYaml, ParameterField<String> environmentRef, NGLogCallback logCallback) {
+      EnvironmentYaml environmentYaml, ParameterField<String> environmentRef) {
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     if (environmentYaml == null) {
       environmentYaml = createEnvYamlFromEnvRef(environmentService, ambiance, environmentRef, logCallback);
       saveExecutionLog(logCallback, "Created environment YAML from reference");
