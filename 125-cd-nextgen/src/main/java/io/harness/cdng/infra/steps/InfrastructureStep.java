@@ -117,7 +117,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
 
     validateConnector(infrastructure, ambiance);
     validateInfrastructure(infrastructure);
@@ -147,7 +147,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -163,7 +163,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     saveExecutionLog(logCallback, "Validating connector...");
     if (infrastructure == null) {
       return;
@@ -203,7 +203,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private ConnectorInfoDTO validateAndGetConnector(ParameterField<String> connectorRef, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     saveExecutionLog(logCallback, "Fetching connector...");
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {

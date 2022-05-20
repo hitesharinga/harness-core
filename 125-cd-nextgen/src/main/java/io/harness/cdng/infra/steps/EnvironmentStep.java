@@ -44,7 +44,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
 
   @Override
   public void validateResources(Ambiance ambiance, InfraSectionStepParameters stepParameters) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance, true);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance, true);
     saveExecutionLog(logCallback, "Starting infrastructure step...");
     InfraStepUtils.validateResources(accessControlClient, ambiance, stepParameters);
   }
@@ -52,7 +52,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   @Override
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, InfraSectionStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getServiceLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
     log.info("Starting execution for InfraSection Step [{}]", stepParameters);
     EnvironmentOutcome environmentOutcome = InfraStepUtils.processEnvironment(
         environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), logCallback);

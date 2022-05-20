@@ -27,11 +27,11 @@ public class InfrastructureSectionHelper {
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
-  public NGLogCallback getServiceLogCallback(Ambiance ambiance) {
-    return getServiceLogCallback(ambiance, false);
+  public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance) {
+    return getInfrastructureLogCallback(ambiance, false);
   }
 
-  public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
+  public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, prepareInfrastructureAmbiance(ambiance),
         INFRASTRUCTURE_COMMAND_UNIT, shouldOpenStream);
   }
