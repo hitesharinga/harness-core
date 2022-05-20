@@ -71,7 +71,8 @@ public class JiraClient {
   }
 
   public List<JiraUserData> getUsers(String userQuery, String accountId, String startAt) {
-    List<JiraUserData> userDataList = executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
+    List<JiraUserData> userDataList =
+        executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
     return userDataList;
   }
 

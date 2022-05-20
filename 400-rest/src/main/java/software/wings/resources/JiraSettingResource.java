@@ -18,14 +18,13 @@ import software.wings.service.impl.JiraHelperService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
-
-import java.util.List;
 
 @Path("/jirasetting")
 @Produces("application/json")
@@ -105,7 +104,7 @@ public class JiraSettingResource {
   public RestResponse<List<JiraUserData>> getUserSearch(@QueryParam("appId") String appId,
       @QueryParam("accountId") @NotEmpty String accountId, @PathParam("connectorId") String connectorId,
       @QueryParam("user") String userQuery, @QueryParam("offset") String offset) {
-    return new RestResponse<>(jiraHelperService.searchUser(
-        connectorId, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, userQuery, offset));
+    return new RestResponse<>(
+        jiraHelperService.searchUser(connectorId, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, userQuery, offset));
   }
 }

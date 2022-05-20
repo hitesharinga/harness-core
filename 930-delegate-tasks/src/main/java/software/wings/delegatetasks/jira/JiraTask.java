@@ -9,7 +9,6 @@ package software.wings.delegatetasks.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import com.google.common.base.Joiner;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -43,6 +42,7 @@ import software.wings.delegatetasks.DelegateLogService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -391,12 +391,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     Map<String, String> userTypeFields = null;
 
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-      userTypeFields =
-          parameters.getCustomFields()
-              .entrySet()
-              .stream()
-              .filter(map -> map.getValue().getFieldType().equals("user"))
-              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
+      userTypeFields = parameters.getCustomFields()
+                           .entrySet()
+                           .stream()
+                           .filter(map -> map.getValue().getFieldType().equals("user"))
+                           .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
       setUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
     }
@@ -653,12 +652,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     Map<String, String> userTypeFields = null;
 
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
-      userTypeFields =
-          parameters.getCustomFields()
-              .entrySet()
-              .stream()
-              .filter(map -> map.getValue().getFieldType().equals("user"))
-              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
+      userTypeFields = parameters.getCustomFields()
+                           .entrySet()
+                           .stream()
+                           .filter(map -> map.getValue().getFieldType().equals("user"))
+                           .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
       setUserTypeCustomFieldsIfPresent(parameters, jira, userTypeFields);
     }
@@ -675,7 +673,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           .issueId(issue.getId())
           .issueKey(issue.getKey())
           .issueUrl(getIssueUrl(parameters.getJiraConfig(), issue.getKey()))
-          .jiraIssueData(JiraIssueData.builder().description(issue.getFields().getOrDefault("Description", "").toString()).build())
+          .jiraIssueData(
+              JiraIssueData.builder().description(issue.getFields().getOrDefault("Description", "").toString()).build())
           .build();
     } catch (JiraClientException e) {
       log.error("Unable to create a new Jira ticket", e);
@@ -693,7 +692,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     try {
       JiraClient jira = getJiraClient(parameters);
       Issue.FluentCreate fluentCreate = jira.createIssue(parameters.getProject(), parameters.getIssueType())
-          .field(Field.SUMMARY, parameters.getSummary());
+                                            .field(Field.SUMMARY, parameters.getSummary());
 
       if (EmptyPredicate.isNotEmpty(parameters.getPriority())) {
         fluentCreate.field(Field.PRIORITY, parameters.getPriority());
@@ -941,7 +940,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters, Map<String, String> userTypeFields) {
+  private Map<String, String> extractFieldsFromCGParameters(
+      JiraTaskParameters parameters, Map<String, String> userTypeFields) {
     Map<String, String> fields = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
       fields.put("Summary", parameters.getSummary());

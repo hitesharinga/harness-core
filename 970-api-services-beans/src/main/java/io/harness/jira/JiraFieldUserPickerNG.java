@@ -11,9 +11,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JiraFieldUserPickerNG {
-	private String accountId;
+  private String accountId;
 
-	public JiraFieldUserPickerNG(String accountId) {
-		this.accountId = accountId;
-	}
+  public JiraFieldUserPickerNG(String accountId) {
+    this.accountId = accountId;
+  }
 }

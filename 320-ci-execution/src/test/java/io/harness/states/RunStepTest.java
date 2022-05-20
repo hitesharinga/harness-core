@@ -313,7 +313,7 @@ public class RunStepTest extends CIExecutionTestBase {
 
     assertThat(stepResponse)
         .isEqualTo(StepResponse.builder()
-                       .status(Status.ERRORED)
+                       .status(Status.FAILED)
                        .failureInfo(FailureInfo.newBuilder()
                                         .setErrorMessage("Delegate is not able to connect to created build farm")
                                         .addFailureData(FailureData.newBuilder()
@@ -371,7 +371,7 @@ public class RunStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =

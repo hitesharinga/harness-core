@@ -16,8 +16,8 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
-
 import io.harness.jira.JiraUserData;
+
 import software.wings.api.ExecutionDataValue;
 import software.wings.sm.StateExecutionData;
 

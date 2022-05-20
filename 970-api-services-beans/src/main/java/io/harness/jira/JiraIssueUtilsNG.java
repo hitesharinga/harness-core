@@ -109,8 +109,10 @@ public class JiraIssueUtilsNG {
     fieldKeys.forEach(key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key)));
   }
 
-  private Map<String, String> parseFieldsForCGCalls(Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
-    Map<String, String> fieldIdsMapToName = finalIssueTypeFields.entrySet().stream().collect(Collectors.toMap(e -> e.getValue().getKey(), e -> e.getKey()));
+  private Map<String, String> parseFieldsForCGCalls(
+      Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
+    Map<String, String> fieldIdsMapToName =
+        finalIssueTypeFields.entrySet().stream().collect(Collectors.toMap(e -> e.getValue().getKey(), e -> e.getKey()));
     return fields.entrySet().stream().collect(Collectors.toMap(field -> {
       if (fieldIdsMapToName.containsKey(field.getKey()) && !finalIssueTypeFields.containsKey(field.getKey())) {
         return fieldIdsMapToName.get(field.getKey());

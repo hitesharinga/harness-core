@@ -30,6 +30,8 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.polling.contracts.AcrPayload;
+import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
@@ -234,6 +236,10 @@ public class BuildTriggerHelper {
       validatePollingItemForDockerRegistry(pollingItem);
     } else if (pollingPayloadData.hasEcrPayload()) {
       validatePollingItemForEcr(pollingItem);
+    } else if (pollingPayloadData.hasArtifactoryRegistryPayload()) {
+      validatePollingItemForArtifactory(pollingItem);
+    } else if (pollingPayloadData.hasAcrPayload()) {
+      validatePollingItemForAcr(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -260,6 +266,33 @@ public class BuildTriggerHelper {
     }
   }
 
+  private void validatePollingItemForArtifactory(PollingItem pollingItem) {
+    ArtifactoryRegistryPayload artifactoryRegistryPayload =
+        pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload();
+    String error = checkFiledValueError("repository", artifactoryRegistryPayload.getRepository());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("repositoryFormat", artifactoryRegistryPayload.getRepositoryFormat());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    String repositoryFormat = artifactoryRegistryPayload.getRepositoryFormat();
+    if (repositoryFormat.equals("generic")) {
+      error = checkFiledValueError("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    } else {
+      error = checkFiledValueError("artifactPath", artifactoryRegistryPayload.getArtifactPath());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    }
+  }
+
   private void validatePollingItemForEcr(PollingItem pollingItem) {
     EcrPayload ecrPayload = pollingItem.getPollingPayloadData().getEcrPayload();
     String error = checkFiledValueError("region", ecrPayload.getRegion());
@@ -268,6 +301,25 @@ public class BuildTriggerHelper {
     }
 
     error = checkFiledValueError("imagePath", ecrPayload.getImagePath());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForAcr(PollingItem pollingItem) {
+    AcrPayload acrPayload = pollingItem.getPollingPayloadData().getAcrPayload();
+
+    String error = checkFiledValueError("subscriptionId", acrPayload.getSubscriptionId());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("registry", acrPayload.getRegistry());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("repository", acrPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

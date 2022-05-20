@@ -50,11 +50,10 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
 import org.mongodb.morphia.annotations.Transient;
-
-import java.util.List;
 
 /**
  * All Jira apis should be accessed via this object.
@@ -289,14 +288,14 @@ public class JiraHelperService {
     return jiraExecutionData.getCreateMetadata();
   }
 
-  public List<JiraUserData> searchUser(String connectorId, String accountId,
-      String appId, long timeoutMillis, String userQuery, String offset) {
+  public List<JiraUserData> searchUser(
+      String connectorId, String accountId, String appId, long timeoutMillis, String userQuery, String offset) {
     JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
-        .accountId(accountId)
-        .userQuery(userQuery)
-        .userQueryOffset(offset)
-        .jiraAction(JiraAction.SEARCH_USER)
-        .build();
+                                                .accountId(accountId)
+                                                .userQuery(userQuery)
+                                                .userQueryOffset(offset)
+                                                .jiraAction(JiraAction.SEARCH_USER)
+                                                .build();
 
     JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters, timeoutMillis);
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {

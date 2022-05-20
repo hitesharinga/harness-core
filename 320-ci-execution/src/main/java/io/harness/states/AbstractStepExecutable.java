@@ -261,8 +261,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     }
     VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) optionalInfraSweepingOutput.getOutput();
 
-    VmStepInfo vmStepInfo = vmStepSerializer.serialize(
-        ambiance, ciStepInfo, stepIdentifier, ParameterField.createValueField(Timeout.fromString(stringTimeout)));
+    VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, vmStageInfraDetails, stepIdentifier,
+        ParameterField.createValueField(Timeout.fromString(stringTimeout)));
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
     CIVmExecuteStepTaskParams params = CIVmExecuteStepTaskParams.builder()
                                            .ipAddress(vmDetailsOutcome.getIpAddress())
@@ -341,7 +341,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                 .build();
 
         return StepResponse.builder()
-            .status(Status.ERRORED)
+            .status(Status.FAILED)
             .failureInfo(FailureInfo.newBuilder()
                              .setErrorMessage("Delegate is not able to connect to created build farm")
                              .addFailureData(failureData)
