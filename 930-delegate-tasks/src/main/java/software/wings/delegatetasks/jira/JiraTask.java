@@ -34,6 +34,7 @@ import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
 
+import org.bson.types.ObjectId;
 import software.wings.api.jira.JiraExecutionData;
 import software.wings.api.jira.JiraExecutionData.JiraIssueData;
 import software.wings.beans.JiraConfig;
@@ -397,7 +398,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
                            .filter(map -> map.getValue().getFieldType().equals("user"))
                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
-      setUserTypeCustomFieldsIfPresent(parameters, jiraNGClient, userTypeFields);
+      setUserTypeCustomFieldsIfPresent(jiraNGClient, userTypeFields);
     }
 
     Map<String, String> fieldsMap = extractFieldsFromCGParameters(parameters, userTypeFields);
@@ -556,17 +557,19 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   }
 
   void setUserTypeCustomFieldsIfPresent(
-      JiraTaskParameters parameters, io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
+      io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
     if (!userTypeFields.isEmpty()) {
+      List<JiraUserData> userDataList;
       for (Entry<String, String> userField : userTypeFields.entrySet()) {
-        List<JiraUserData> userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
-        if (userDataList.isEmpty()) {
+        if (ObjectId.isValid(userField.getValue())) {
+          userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
+        } else {
           userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
-          if (userDataList.size() != 1) {
-            throw new InvalidRequestException("Found " + userDataList.size() + "jira users with this query");
-          }
-          userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
         }
+        if (userDataList.size() != 1) {
+          throw new InvalidRequestException("Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
+        }
+        userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
       }
     }
   }
@@ -658,7 +661,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
                            .filter(map -> map.getValue().getFieldType().equals("user"))
                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getFieldValue()));
 
-      setUserTypeCustomFieldsIfPresent(parameters, jira, userTypeFields);
+      setUserTypeCustomFieldsIfPresent(jira, userTypeFields);
     }
 
     try {
