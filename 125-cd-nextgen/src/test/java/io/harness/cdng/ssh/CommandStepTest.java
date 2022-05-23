@@ -69,7 +69,8 @@ public class CommandStepTest extends CategoryTest {
       CommandStepParameters.infoBuilder()
           .commandUnits(Arrays.asList(
               CommandUnitWrapper.builder()
-                  .commandUnit(StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
+                  .commandUnit(
+                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
                   .build()))
           .build();
   private SshCommandTaskParameters sshCommandTaskParameters =
@@ -77,7 +78,8 @@ public class CommandStepTest extends CategoryTest {
           .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
           .executeOnDelegate(false)
           .accountId(accountId)
-              .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(), ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
+          .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
+              ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
           .build();
   KryoSerializer serializer = new KryoSerializer(
       new HashSet<>(Arrays.asList(DelegateTasksBeansKryoRegister.class, ApiServiceBeansKryoRegister.class)));
@@ -107,7 +109,8 @@ public class CommandStepTest extends CategoryTest {
     verify(sshCommandStepHelper, times(1)).buildSshCommandTaskParameters(ambiance, commandStepParameters);
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
-    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters()).isEqualTo(ByteString.copyFrom(serializedParams));
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters())
+        .isEqualTo(ByteString.copyFrom(serializedParams));
   }
 
   @Test

@@ -34,7 +34,7 @@ public class StepCommandUnit {
   @ApiModelProperty(hidden = true)
   String uuid;
   @NotNull String type;
-  String name;
+  @NotNull String name;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) CommandUnitBaseSpec spec;
 
   @Builder

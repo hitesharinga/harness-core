@@ -139,7 +139,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);
     assertThat(taskParameters.getCommandUnits()).isNotEmpty();
     assertThat(taskParameters.getCommandUnits().size()).isEqualTo(3);
-    NgCommandUnit commandUnit = taskParameters.getCommandUnits().stream().filter(cu-> cu.getCommandUnitType().equals(NGCommandUnitType.SCRIPT)).findFirst().get();
+    NgCommandUnit commandUnit = taskParameters.getCommandUnits()
+                                    .stream()
+                                    .filter(cu -> cu.getCommandUnitType().equals(NGCommandUnitType.SCRIPT))
+                                    .findFirst()
+                                    .get();
     assertThat(commandUnit).isInstanceOf(ScriptCommandUnit.class);
     ScriptCommandUnit scriptCommandUnit = (ScriptCommandUnit) commandUnit;
     assertThat(scriptCommandUnit.getWorkingDirectory()).isEqualTo(workingDir);

@@ -61,7 +61,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
 
   @Inject @InjectMocks static final SshInitCommandHandler sshInitCommandHandler = new SshInitCommandHandler();
 
-  final static String TAIL_FILE_PATTERN = "some pattern";
+  static final String TAIL_FILE_PATTERN = "some pattern";
   final List<TailFilePatternDto> tailFilePatterns =
       Arrays.asList(TailFilePatternDto.builder().filePath("some path").pattern(TAIL_FILE_PATTERN).build());
 
