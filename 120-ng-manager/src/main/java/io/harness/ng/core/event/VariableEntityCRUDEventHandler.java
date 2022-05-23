@@ -24,8 +24,9 @@ public class VariableEntityCRUDEventHandler {
   }
 
   public boolean deleteAssociatedVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    variableService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier,
-        fetchAllVariablesInGivenScope(accountIdentifier, orgIdentifier, projectIdentifier));
+    List<String> variableIdentifiersList =
+        fetchAllVariablesInGivenScope(accountIdentifier, orgIdentifier, projectIdentifier);
+    variableService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifiersList);
     return true;
   }
 

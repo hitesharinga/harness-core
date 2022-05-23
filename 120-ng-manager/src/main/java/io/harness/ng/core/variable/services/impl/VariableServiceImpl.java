@@ -16,6 +16,7 @@ import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_P
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.beans.SortOrder;
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -63,6 +65,7 @@ public class VariableServiceImpl implements VariableService {
   private final OutboxService outboxService;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
+  @Inject private MongoTemplate mongoTemplate;
 
   @Inject
   public VariableServiceImpl(VariableRepository variableRepository, VariableMapper variableMapper,
@@ -216,10 +219,15 @@ public class VariableServiceImpl implements VariableService {
   public void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> variableIdentifiersList) {
     for (String variableIdentifier : variableIdentifiersList) {
-      Optional<Variable> existingVariable =
-          variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-              accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifier);
-      existingVariable.ifPresent(variableRepository::delete);
+      Criteria criteria = Criteria.where(VariableKeys.accountIdentifier)
+                              .is(accountIdentifier)
+                              .and(VariableKeys.orgIdentifier)
+                              .is(orgIdentifier)
+                              .and(VariableKeys.projectIdentifier)
+                              .is(projectIdentifier)
+                              .and(VariableKeys.identifier)
+                              .is(variableIdentifier);
+      mongoTemplate.remove(query(criteria), Variable.class);
     }
   }
 
