@@ -1476,6 +1476,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CopyCommandUnit.class, 55308);
     kryo.register(NgInitCommandUnit.class, 55309);
     kryo.register(NgCleanupCommandUnit.class, 55310);
-
   }
 }

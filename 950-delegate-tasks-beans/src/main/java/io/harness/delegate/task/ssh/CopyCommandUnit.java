@@ -15,8 +15,8 @@ import io.harness.ssh.FileSourceType;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
 @Value
+@Builder
 @OwnedBy(CDP)
 public class CopyCommandUnit implements NgCommandUnit {
   String name;

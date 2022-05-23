@@ -8,9 +8,9 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -80,7 +80,8 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
         taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
     String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
-            TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
   }
 

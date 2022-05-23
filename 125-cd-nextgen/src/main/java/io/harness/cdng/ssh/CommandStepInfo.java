@@ -77,5 +77,4 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, 
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
   }
-
 }

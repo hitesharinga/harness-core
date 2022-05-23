@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.EXECLAUNCHERV2_SH_FTL;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.TAILWRAPPERV2_SH_FTL;
+
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -145,7 +146,7 @@ public class SshInitCommandHandler implements CommandHandler {
   private String generateExecLauncherV2Command(SshCommandTaskParameters taskParameters, ScriptCommandUnit commandUnit,
       boolean includeTailFunctions) throws IOException, TemplateException {
     String workingDir =
-            isNotBlank(commandUnit.getWorkingDirectory()) ? "'" + commandUnit.getWorkingDirectory().trim() + "'" : "";
+        isNotBlank(commandUnit.getWorkingDirectory()) ? "'" + commandUnit.getWorkingDirectory().trim() + "'" : "";
     try (StringWriter stringWriter = new StringWriter()) {
       Map<String, Object> templateParams = ImmutableMap.<String, Object>builder()
                                                .put("executionId", taskParameters.getExecutionId())

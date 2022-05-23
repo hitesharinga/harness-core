@@ -240,9 +240,7 @@ public enum EntityType {
   INFRASTRUCTURE(
       ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE),
   @JsonProperty(EntityTypeConstants.COMMAND)
-  COMMAND_STEP(
-          ModuleType.CD, EntityTypeConstants.COMMAND, IdentifierRef.class, EntityYamlRootNames.COMMAND);
-
+  COMMAND_STEP(ModuleType.CD, EntityTypeConstants.COMMAND, IdentifierRef.class, EntityYamlRootNames.COMMAND);
 
   private final ModuleType moduleType;
   String yamlName;

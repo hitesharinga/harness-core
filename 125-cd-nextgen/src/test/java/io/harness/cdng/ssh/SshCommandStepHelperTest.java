@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
+import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
@@ -137,8 +138,8 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(taskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);
     assertThat(taskParameters.getCommandUnits()).isNotEmpty();
-    assertThat(taskParameters.getCommandUnits().size()).isOne();
-    NgCommandUnit commandUnit = taskParameters.getCommandUnits().get(0);
+    assertThat(taskParameters.getCommandUnits().size()).isEqualTo(3);
+    NgCommandUnit commandUnit = taskParameters.getCommandUnits().stream().filter(cu-> cu.getCommandUnitType().equals(NGCommandUnitType.SCRIPT)).findFirst().get();
     assertThat(commandUnit).isInstanceOf(ScriptCommandUnit.class);
     ScriptCommandUnit scriptCommandUnit = (ScriptCommandUnit) commandUnit;
     assertThat(scriptCommandUnit.getWorkingDirectory()).isEqualTo(workingDir);

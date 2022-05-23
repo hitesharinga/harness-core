@@ -876,12 +876,11 @@ public class CDStepHelper {
 
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     if (!optionalOutcome.isFound()) {
       throw new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR, USER);
     }
 
     return (InfrastructureOutcome) optionalOutcome.getOutcome();
   }
-
 }

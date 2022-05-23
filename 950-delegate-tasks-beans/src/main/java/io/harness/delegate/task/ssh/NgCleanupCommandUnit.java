@@ -15,8 +15,8 @@ import io.harness.ssh.SshCommandUnitConstants;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
 @Value
+@Builder
 @OwnedBy(CDP)
 public class NgCleanupCommandUnit implements NgCommandUnit {
   @Override

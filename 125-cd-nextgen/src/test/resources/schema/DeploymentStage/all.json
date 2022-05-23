@@ -5277,42 +5277,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ScriptCommandUnitSpec": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CommandUnitBaseSpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "shell",
-            "source"
-          ],
-          "properties": {
-            "shell": {
-              "type": "string",
-              "enum": [
-                "Bash",
-                "PowerShell"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/ShellScriptSourceWrapper"
-            },
-            "tailFiles": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TailFilePattern"
-              }
-            },
-            "workingDirectory": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "S3UrlCloudformationTemplateFileSpec": {
       "allOf": [
         {
@@ -5368,6 +5332,42 @@
                   "minLength": 1
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ScriptCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "shell",
+            "source"
+          ],
+          "properties": {
+            "shell": {
+              "type": "string",
+              "enum": [
+                "Bash",
+                "PowerShell"
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            },
+            "tailFiles": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TailFilePattern"
+              }
+            },
+            "workingDirectory": {
+              "type": "string"
             }
           }
         }
@@ -6688,6 +6688,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Command"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommandStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "CreateStack"
               }
             }
@@ -6712,22 +6728,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CloudformationDeleteStackStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Command"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CommandStepInfo"
               }
             }
           }

@@ -1512,6 +1512,17 @@
 55218:com.github.dikhan.pagerduty.client.events.domain.Severity
 55219:io.harness.notification.remote.SmtpConfigResponse
 55299:io.harness.notification.SmtpConfig
+55300:io.harness.delegate.task.shell.CommandTaskResponse
+55301:io.harness.delegate.task.shell.CommandTaskParameters
+55302:io.harness.delegate.task.shell.SshCommandTaskParameters
+55303:io.harness.delegate.task.shell.TailFilePatternDto
+55304:io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig
+55305:io.harness.delegate.task.ssh.NgCommandUnit
+55306:io.harness.delegate.task.ssh.NGCommandUnitType
+55307:io.harness.delegate.task.ssh.ScriptCommandUnit
+55308:io.harness.delegate.task.ssh.CopyCommandUnit
+55309:io.harness.delegate.task.ssh.NgInitCommandUnit
+55310:io.harness.delegate.task.ssh.NgCleanupCommandUnit
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -1577,6 +1588,7 @@
 97112:io.harness.delegate.beans.artifact.ArtifactFileMetadata
 97113:io.harness.servicenow.ServiceNowTemplate
 97114:io.harness.aws.AwsCFTemplatesType
+97115:io.harness.ssh.FileSourceType
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.delegate.task.helm.HelmCommandRequestNG$HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG

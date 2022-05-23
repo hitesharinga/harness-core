@@ -29,7 +29,6 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
-import io.harness.exception.CommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.shell.ScriptProcessExecutor;

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.SshSessionConfigMapperFields;
-import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.shell.SshSessionConfig;
 
 import lombok.AccessLevel;

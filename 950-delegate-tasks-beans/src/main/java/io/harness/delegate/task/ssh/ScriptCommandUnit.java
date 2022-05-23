@@ -19,8 +19,8 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 @OwnedBy(CDP)
 public class ScriptCommandUnit implements NgCommandUnit {
   String name;

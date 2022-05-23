@@ -22,7 +22,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.shell.CommandTaskResponse;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
+import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
+import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -62,12 +65,19 @@ public class CommandStepTest extends CategoryTest {
 
   private final String accountId = "accountId";
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-  private final CommandStepParameters commandStepParameters = CommandStepParameters.infoBuilder().build();
+  private final CommandStepParameters commandStepParameters =
+      CommandStepParameters.infoBuilder()
+          .commandUnits(Arrays.asList(
+              CommandUnitWrapper.builder()
+                  .commandUnit(StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
+                  .build()))
+          .build();
   private SshCommandTaskParameters sshCommandTaskParameters =
       SshCommandTaskParameters.builder()
           .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
           .executeOnDelegate(false)
           .accountId(accountId)
+              .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(), ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
           .build();
   KryoSerializer serializer = new KryoSerializer(
       new HashSet<>(Arrays.asList(DelegateTasksBeansKryoRegister.class, ApiServiceBeansKryoRegister.class)));
@@ -97,8 +107,7 @@ public class CommandStepTest extends CategoryTest {
     verify(sshCommandStepHelper, times(1)).buildSshCommandTaskParameters(ambiance, commandStepParameters);
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
-    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters())
-        .isEqualTo(ByteString.copyFrom(serializedParams));
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters()).isEqualTo(ByteString.copyFrom(serializedParams));
   }
 
   @Test

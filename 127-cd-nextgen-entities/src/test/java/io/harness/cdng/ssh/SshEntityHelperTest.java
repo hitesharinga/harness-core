@@ -58,90 +58,90 @@ import retrofit2.Response;
 
 @OwnedBy(CDP)
 public class SshEntityHelperTest extends CategoryTest {
-    @Mock private SecretNGManagerClient secretManagerClient;
-    @Mock private ConnectorService connectorService;
-    @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
+  @Mock private SecretNGManagerClient secretManagerClient;
+  @Mock private ConnectorService connectorService;
+  @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
 
-    @InjectMocks private SshEntityHelper helper;
+  @InjectMocks private SshEntityHelper helper;
 
-    private final String accountId = "test";
-    private final Ambiance ambiance = Ambiance.newBuilder()
-            .putSetupAbstractions(SetupAbstractionKeys.accountId, accountId)
-            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "testProject")
-            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "testOrg")
-            .build();
+  private final String accountId = "test";
+  private final Ambiance ambiance = Ambiance.newBuilder()
+                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, accountId)
+                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "testProject")
+                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "testOrg")
+                                        .build();
 
-    private final Optional<ConnectorResponseDTO> connectorDTO = Optional.of(
-            ConnectorResponseDTO.builder()
-                    .connector(
-                            ConnectorInfoDTO.builder()
-                                    .connectorType(ConnectorType.PDC)
-                                    .connectorConfig(
-                                            PhysicalDataCenterConnectorDTO.builder().hosts(Arrays.asList(new HostDTO("host1", null))).build())
-                                    .build())
-                    .build());
+  private final Optional<ConnectorResponseDTO> connectorDTO = Optional.of(
+      ConnectorResponseDTO.builder()
+          .connector(
+              ConnectorInfoDTO.builder()
+                  .connectorType(ConnectorType.PDC)
+                  .connectorConfig(
+                      PhysicalDataCenterConnectorDTO.builder().hosts(Arrays.asList(new HostDTO("host1", null))).build())
+                  .build())
+          .build());
 
-    private final SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+  private final SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
-    @Before
-    public void prepare() throws IOException {
-        MockitoAnnotations.initMocks(this);
+  @Before
+  public void prepare() throws IOException {
+    MockitoAnnotations.initMocks(this);
 
-        doReturn(connectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
+    doReturn(connectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
 
-        Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-        ResponseDTO<SecretResponseWrapper> responseDTO =
-                ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                        .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                        .build());
-        doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-        doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-        doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-                .when(sshKeySpecDTOHelper)
-                .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
-    }
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
+    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
+        .when(sshKeySpecDTOHelper)
+        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+  }
 
-    @Test
-    @Owner(developers = ACASIAN)
-    @Category(UnitTests.class)
-    public void testGetSshInfraDelegateConfigFromPdcConnector() {
-        PdcInfrastructureOutcome pdcInfrastructure =
-                PdcInfrastructureOutcome.builder().connectorRef("pdcConnector").credentialsRef("sshKeyRef").build();
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetSshInfraDelegateConfigFromPdcConnector() {
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder().connectorRef("pdcConnector").credentialsRef("sshKeyRef").build();
 
-        SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
-        assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
-        PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
-        assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
-        assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-        assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
-        assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
-    }
+    SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
+    assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
+    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
+  }
 
-    @Test
-    @Owner(developers = ACASIAN)
-    @Category(UnitTests.class)
-    public void testGetSshInfraDelegateConfigFromPdcInfrastructure() {
-        PdcInfrastructureOutcome pdcInfrastructure =
-                PdcInfrastructureOutcome.builder().credentialsRef("sshKeyRef").hosts(Arrays.asList("host2")).build();
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetSshInfraDelegateConfigFromPdcInfrastructure() {
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder().credentialsRef("sshKeyRef").hosts(Arrays.asList("host2")).build();
 
-        SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
-        assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
-        PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
-        assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
-        assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-        assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
-        assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
-    }
+    SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
+    assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
+    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
+  }
 
-    @Test
-    @Owner(developers = ACASIAN)
-    @Category(UnitTests.class)
-    public void testThrowUnsupportedExceptionForNonePdcInfra() {
-        assertThatThrownBy(
-                () -> helper.getSshInfraDelegateConfig(K8sDirectInfrastructureOutcome.builder().build(), ambiance))
-                .isInstanceOf(UnsupportedOperationException.class);
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testThrowUnsupportedExceptionForNonePdcInfra() {
+    assertThatThrownBy(
+        () -> helper.getSshInfraDelegateConfig(K8sDirectInfrastructureOutcome.builder().build(), ambiance))
+        .isInstanceOf(UnsupportedOperationException.class);
 
-        assertThatThrownBy(() -> helper.getSshInfraDelegateConfig(K8sGcpInfrastructureOutcome.builder().build(), ambiance))
-                .isInstanceOf(UnsupportedOperationException.class);
-    }
+    assertThatThrownBy(() -> helper.getSshInfraDelegateConfig(K8sGcpInfrastructureOutcome.builder().build(), ambiance))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
 }

@@ -38,8 +38,9 @@ public class StepCommandUnit {
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) CommandUnitBaseSpec spec;
 
   @Builder
-  public StepCommandUnit(String type, CommandUnitBaseSpec spec) {
+  public StepCommandUnit(String type, String name, CommandUnitBaseSpec spec) {
     this.type = type;
+    this.name = name;
     this.spec = spec;
   }
 }

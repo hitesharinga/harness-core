@@ -121,7 +121,6 @@ public enum NGStepType {
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
       StepSpecTypeConstants.COMMAND);
 
-
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
   private String category;
