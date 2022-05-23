@@ -212,6 +212,17 @@ public class VariableServiceImpl implements VariableService {
     return false;
   }
 
+  @Override
+  public void deleteBatch(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> variableIdentifiersList) {
+    for (String variableIdentifier : variableIdentifiersList) {
+      Optional<Variable> existingVariable =
+          variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifier);
+      existingVariable.ifPresent(variableRepository::delete);
+    }
+  }
+
   private Criteria getCriteriaForVariableExpressions(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return Criteria.where(VariableKeys.accountIdentifier)
