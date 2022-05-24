@@ -305,10 +305,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
   }
 
+  @Override
   public List<String> getLogKeys(Ambiance ambiance) {
     return Lists.newArrayList("Execute");
   }
 
+  @Override
   public List<String> getCommandUnits(Ambiance ambiance) {
     return Lists.newArrayList("Execute");
   }
