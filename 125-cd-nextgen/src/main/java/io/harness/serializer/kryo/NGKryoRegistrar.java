@@ -27,6 +27,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
 import io.harness.cdng.k8s.K8sCanaryOutcome;
@@ -53,6 +54,9 @@ import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
+import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
+import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
@@ -103,6 +107,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(K8sGcpInfrastructure.class, 8301);
     kryo.register(PdcInfrastructure.class, 8302);
+    kryo.register(SshWinRmAzureInfrastructure.class, 8303);
 
     // Starting using 12500 series as 8100 series is also used in 400-rest
     kryo.register(K8sBlueGreenOutcome.class, 12500);
@@ -135,6 +140,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(CDAccountExecutionMetadata.class, 12550);
 
     kryo.register(InfraSectionStepParameters.class, 12552);
+    kryo.register(CloudformationCreateStackStepInfo.class, 12566);
+    kryo.register(CloudformationDeleteStackStepInfo.class, 12567);
 
     kryo.register(ServerlessAwsLambdaDeployStepInfo.class, 12571);
     kryo.register(ServerlessAwsLambdaDeployStepParameters.class, 12572);
@@ -147,5 +154,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessGitFetchFailurePassThroughData.class, 12581);
     kryo.register(ServerlessGitFetchOutcome.class, 12582);
     kryo.register(ServerlessAwsLambdaRollbackDataOutcome.class, 12583);
+    kryo.register(CloudformationRollbackStepInfo.class, 12584);
   }
 }

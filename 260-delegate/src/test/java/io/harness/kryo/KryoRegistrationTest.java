@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.fail;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.packages.HarnessPackages;
 import io.harness.rule.Owner;
+import io.harness.serializer.DelegateRegistrars;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -39,7 +39,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class KryoRegistrationTest extends CategoryTest {
   private static final String KRYO_REGISTRATION_FILE = "kryo-registrations.txt";
@@ -64,7 +63,7 @@ public class KryoRegistrationTest extends CategoryTest {
   @Test
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
-  public void testKryoRegistrarForDuplicateClasses()
+  public void testForDuplicateClassesBetweenKryoRegistrars()
       throws InstantiationException, IllegalAccessException, NoSuchFieldException {
     Map<Class, ImmutablePair<String, Integer>> processedRegistrations = new HashMap<>();
     for (Class<? extends KryoRegistrar> registrarClass : getAllKryoRegistrars()) {
@@ -108,7 +107,7 @@ public class KryoRegistrationTest extends CategoryTest {
   @Test
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
-  public void testKryoRegistrarForDuplicateIds()
+  public void testForDuplicateIdsBetweenKryoRegistrars()
       throws InstantiationException, IllegalAccessException, NoSuchFieldException {
     IntMap<ImmutablePair<String, String>> processedRegistrations = new IntMap<>();
     for (Class<? extends KryoRegistrar> registrarClass : getAllKryoRegistrars()) {
@@ -228,11 +227,7 @@ public class KryoRegistrationTest extends CategoryTest {
   }
 
   private static Set<Class<? extends KryoRegistrar>> getAllKryoRegistrars() {
-    Set<Class<? extends KryoRegistrar>> result = new HashSet<>();
-    Reflections reflections =
-        new Reflections(HarnessPackages.IO_HARNESS, HarnessPackages.SOFTWARE_WINGS, "io.serializer");
-    result.addAll(reflections.getSubTypesOf(KryoRegistrar.class));
-    return result;
+    return DelegateRegistrars.kryoRegistrars;
   }
 
   private static Map<Integer, String> loadAllExpectedKryoRegistrations() throws IOException {

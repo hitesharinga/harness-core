@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -34,6 +35,9 @@ import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStep;
+import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStep;
+import io.harness.cdng.provision.cloudformation.CloudformationRollbackStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
@@ -97,11 +101,14 @@ public class NgStepRegistrar {
     engineSteps.put(RollbackStepsStep.STEP_TYPE, RollbackStepsStep.class);
     engineSteps.put(StepGroupRollbackStep.STEP_TYPE, RollbackStepsStep.class);
     engineSteps.put(EnvironmentStep.STEP_TYPE, EnvironmentStep.class);
+    engineSteps.put(EnvironmentStepV2.STEP_TYPE, EnvironmentStepV2.class);
     engineSteps.put(HelmDeployStep.STEP_TYPE, HelmDeployStep.class);
     engineSteps.put(HelmRollbackStep.STEP_TYPE, HelmRollbackStep.class);
+    engineSteps.put(CloudformationDeleteStackStep.STEP_TYPE, CloudformationDeleteStackStep.class);
+    engineSteps.put(CloudformationCreateStackStep.STEP_TYPE, CloudformationCreateStackStep.class);
+    engineSteps.put(CloudformationRollbackStep.STEP_TYPE, CloudformationRollbackStep.class);
     engineSteps.put(ServerlessAwsLambdaDeployStep.STEP_TYPE, ServerlessAwsLambdaDeployStep.class);
     engineSteps.put(ServerlessAwsLambdaRollbackStep.STEP_TYPE, ServerlessAwsLambdaRollbackStep.class);
-
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

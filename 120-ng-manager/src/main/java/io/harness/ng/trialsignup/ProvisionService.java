@@ -33,10 +33,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
-import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnexpectedException;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.network.Http;
 import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.api.SecretCrudService;
@@ -77,14 +75,14 @@ public class ProvisionService {
   @Inject NextGenConfiguration configuration;
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
   @Inject private ScmClient scmClient;
-  @Inject private GitSyncConnectorHelper gitSyncConnectorHelper;
+  //  @Inject private GitSyncConnectorHelper gitSyncConnectorHelper;
 
   private static final String K8S_CONNECTOR_NAME = "Harness Kubernetes Cluster";
   private static final String K8S_CONNECTOR_DESC =
       "Kubernetes Cluster Connector created by Harness for connecting to Harness Builds environment";
   private static final String K8S_CONNECTOR_IDENTIFIER = "Harness_Kubernetes_Cluster";
 
-  private static final String K8S_DELEGATE_NAME = "Harness Kubernetes Delegate";
+  private static final String K8S_DELEGATE_NAME = "harness-kubernetes-delegate";
   private static final String K8S_DELEGATE_DESC =
       "Kubernetes Delegate created by Harness for communication with Harness Kubernetes Cluster";
 
@@ -92,7 +90,7 @@ public class ProvisionService {
 
   private static final String GENERATE_SAMPLE_DELEGATE_CURL_COMMAND_FORMAT_STRING =
       "curl -s -X POST -H 'content-type: application/json' "
-      + "--url https://app.harness.io/gateway/api/webhooks/WLwBdpY6scP0G9oNsGcX2BHrY4xH44W7r7HWYC94 "
+      + "--url https://app.harness.io/gateway/api/webhooks/WLwBdpY6scP0G9oNsGcX2BHrY4xH44W7r7HWYC94?accountId=gz4oUAlfSgONuOrWmphHif "
       + "-d '{\"application\":\"4qPkwP5dQI2JduECqGZpcg\","
       + "\"parameters\":{\"Environment\":\"%s\",\"delegate\":\"delegate-ci\","
       + "\"account_id\":\"%s\",\"account_id_short\":\"%s\",\"account_secret\":\"%s\"}}'";
@@ -248,7 +246,7 @@ public class ProvisionService {
    */
   public DelegateStatus getDelegateInstallStatus(String accountId) {
     try {
-      String url = format(SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING, configuration.getSignupTargetEnv(),
+      String url = format(SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING, configuration.getDelegateStatusEndpoint(),
           getAccountIdentifier(accountId));
       log.info("Fetching delegate provisioning progress for account {} from {}", accountId, url);
       String result = Http.getResponseStringFromUrl(url, 30, 10).trim();
@@ -320,7 +318,8 @@ public class ProvisionService {
       connectorResponseDTO =
           connectorService.create(ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build(), accountIdentifier);
     } else {
-      connectorService.update(ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build(), accountIdentifier);
+      connectorResponseDTO =
+          connectorService.update(ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build(), accountIdentifier);
     }
 
     ConnectorValidationResult connectorValidationResult = connectorService.testConnection(
@@ -339,9 +338,9 @@ public class ProvisionService {
         connectorService.getByRef(accountId, orgIdentifier, projectIdentifier, repoRef);
     connector.orElseThrow(
         () -> new InvalidArgumentsException(format("connector %s was not found in account %s", repoRef, accountId)));
-    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
-        accountId, null, null, (ScmConnector) connector.get().getConnector().getConnectorConfig());
-    return convertToUserRepo(scmClient.getAllUserRepos(decryptedConnector));
+    //    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
+    //        accountId, null, null, (ScmConnector) connector.get().getConnector().getConnectorConfig());
+    return convertToUserRepo(scmClient.getAllUserRepos(null));
   }
 
   private List<UserRepoResponse> convertToUserRepo(GetUserReposResponse allUserRepos) {
