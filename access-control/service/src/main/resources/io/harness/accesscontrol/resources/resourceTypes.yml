@@ -1,4 +1,4 @@
-\# Any edit in this file should accompany an increment in version.
+# Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
 version: 10
 resourceTypes:
