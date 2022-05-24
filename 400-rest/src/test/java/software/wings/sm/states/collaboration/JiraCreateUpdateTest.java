@@ -697,7 +697,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Test
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void a() {
+  public void shouldQueueJiraUpdateTaskWithNGClient() {
     setUpMocksForEntireExecutionFlow();
     when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(true);
     when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
@@ -720,6 +720,34 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
     assertThat(executionResponse).isEqualTo(expectedExecutionResponse);
     assertThat(jiraCreateUpdateState.getJiraAction() == JiraAction.UPDATE_TICKET_NG);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldQueueJiraCreateTaskWithNGClient() {
+    setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(true);
+    when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
+    jiraCreateUpdateState.setJiraAction(JiraAction.CREATE_TICKET);
+    jiraCreateUpdateState.setIssueType(ISSUE_TYPE);
+    ExecutionResponse expectedExecutionResponse =
+        ExecutionResponse.builder()
+            .async(true)
+            .correlationIds(Collections.singletonList(ACTIVITY_ID))
+            .delegateTaskId(UUID)
+            .stateExecutionData(JiraExecutionData.builder().activityId(ACTIVITY_ID).build())
+            .build();
+    ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
+    ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    assertThat(delegateTaskArgumentCaptor.getValue())
+        .isNotNull()
+        .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
+    assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
+    verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
+    assertThat(executionResponse).isEqualTo(expectedExecutionResponse);
+    assertThat(jiraCreateUpdateState.getJiraAction() == JiraAction.CREATE_TICKET_NG);
   }
 
   @Test

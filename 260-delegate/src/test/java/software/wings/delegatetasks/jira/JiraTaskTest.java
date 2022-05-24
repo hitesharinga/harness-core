@@ -18,6 +18,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
@@ -37,6 +38,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
 import software.wings.api.jira.JiraExecutionData;
@@ -48,6 +50,8 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -112,6 +116,7 @@ public class JiraTaskTest extends CategoryTest {
   @Mock private EncryptionService encryptionService;
   @Mock private Issue issue;
   @Mock private JiraClient jiraClient;
+  @Mock private io.harness.jira.JiraClient jiraNGClient;
   @Mock private Project project;
   @Mock private FluentUpdate update;
   @Mock private FluentCreate create;
@@ -132,6 +137,20 @@ public class JiraTaskTest extends CategoryTest {
   @Before
   public void initMocks() {
     MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldFetchUserListInfo() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
+    List<JiraUserData> mockUserList =
+        new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+
+    Mockito.doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    when(jiraNGClient.getUsers(anyString(), anyString(), anyString())).thenReturn(mockUserList);
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+
   }
 
   @Test
@@ -801,6 +820,7 @@ public class JiraTaskTest extends CategoryTest {
         .jiraConfig(
             JiraConfig.builder().baseUrl("https://some.attlasian.net").password("password".toCharArray()).build())
         .summary(SUMMARY)
+        .userQuery("user@harness.io")
         .labels(Collections.singletonList(LABEL))
         .build();
   }

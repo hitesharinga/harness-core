@@ -27,4 +27,10 @@ public class JiraUserData {
     this.displayName = JsonNodeUtils.mustGetString(node, "displayName");
     this.active = JsonNodeUtils.mustGetBoolean(node, "active");
   }
+
+  public JiraUserData(String accountId, String displayName, boolean active) {
+    this.accountId = accountId;
+    this.displayName = displayName;
+    this.active = active;
+  }
 }
