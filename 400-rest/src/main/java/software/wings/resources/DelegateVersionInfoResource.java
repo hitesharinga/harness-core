@@ -8,11 +8,14 @@
 package software.wings.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
 
+import io.harness.security.annotations.PublicApi;
 import software.wings.service.intfc.AccountService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -55,5 +58,18 @@ public class DelegateVersionInfoResource {
       return watcherVersion.get(0);
     }
     throw new InvalidRequestException("Unable to get watcher version from ring");
+  }
+
+  @GET
+  @Path("/watcher-global")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public String getWatcherVersion() {
+    List<String> watcherVersion = accountService.getWatcherVersion("");
+    if (isNotEmpty(watcherVersion)) {
+      return watcherVersion.get(0);
+    }
+    throw new InvalidRequestException("Unable to get watcher version");
   }
 }

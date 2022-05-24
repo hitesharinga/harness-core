@@ -15,13 +15,17 @@ import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
 import static io.harness.delegate.beans.VersionOverrideType.UPGRADER_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.WATCHER_JAR;
 
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.ff.FeatureFlagService;
+import io.harness.network.Http;
 import io.harness.persistence.HPersistence;
 
 import software.wings.app.MainConfiguration;
@@ -38,6 +42,7 @@ public class DelegateVersionService {
   public static final String DEFAULT_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
   private final DelegateRingService delegateRingService;
   private final FeatureFlagService featureFlagService;
+  private final software.wings.service.impl.infra.InfraDownloadService infraDownloadService;
   private final MainConfiguration mainConfiguration;
   private final HPersistence persistence;
 
@@ -91,6 +96,16 @@ public class DelegateVersionService {
   }
 
   public List<String> getWatcherJarVersions(final String accountId) {
+    if (isEmpty(accountId)) {
+      try {
+        String delegateMetadata =
+            Http.getResponseStringFromUrl(infraDownloadService.getCdnWatcherMetaDataFileUrl(), 10, 10);
+        return singletonList(substringBefore(delegateMetadata, " ").trim());
+      } catch (Exception ex) {
+        return Collections.emptyList();
+      }
+    }
+
     final VersionOverride versionOverride = getVersionOverride(accountId, WATCHER_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return Collections.singletonList(versionOverride.getVersion());
