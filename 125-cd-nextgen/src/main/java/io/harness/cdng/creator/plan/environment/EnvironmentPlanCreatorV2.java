@@ -10,9 +10,9 @@ package io.harness.cdng.creator.plan.environment;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
-import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -25,7 +25,8 @@ import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
@@ -33,11 +34,13 @@ import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class EnvironmentPlanCreatorV2 implements PartialPlanCreator<EnvironmentPlanCreatorConfig> {
+public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPlanCreatorConfig> {
   @Inject KryoSerializer kryoSerializer;
 
   @Override
@@ -52,13 +55,21 @@ public class EnvironmentPlanCreatorV2 implements PartialPlanCreator<EnvironmentP
   }
 
   @Override
-  public PlanCreationResponse createPlanForField(
-      PlanCreationContext ctx, EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
+  public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
+      PlanCreationContext ctx, EnvironmentPlanCreatorConfig config) {
+    boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
+    return null;
+  }
+
+  @Override
+  public PlanNode createPlanForParentNode(PlanCreationContext ctx,
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, List<String> childrenNodeIds) {
     /*
     EnvironmentPlanCreator is dependent on infraSectionStepParameters and serviceSpecNodeUuid which is used as advisor
      */
     EnvironmentStepParameters environmentStepParameters =
-        EnvironmentPlanCreatorConfigHelper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
+        EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
 
     String serviceSpecNodeUuid = (String) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_SPEC).toByteArray());
@@ -66,24 +77,22 @@ public class EnvironmentPlanCreatorV2 implements PartialPlanCreator<EnvironmentP
     ByteString advisorParameters = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
 
-    PlanNode planNode =
-        PlanNode.builder()
-            .uuid(ctx.getCurrentField().getNode().getUuid())
-            .stepType(EnvironmentStep.STEP_TYPE) // TODO: change this step type once EnvironmentStepV2 is created
-            .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
-            .identifier(YamlTypes.ENVIRONMENT_YAML)
-            .stepParameters(environmentStepParameters)
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
-                    .build())
-            .adviserObtainment(
-                AdviserObtainment.newBuilder()
-                    .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                    .setParameters(advisorParameters)
-                    .build())
-            .skipExpressionChain(false)
-            .build();
-    return PlanCreationResponse.builder().planNode(planNode).build();
+    return PlanNode.builder()
+        .uuid(ctx.getCurrentField().getNode().getUuid())
+        .stepType(EnvironmentStepV2.STEP_TYPE)
+        .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
+        .identifier(YamlTypes.ENVIRONMENT_YAML)
+        .stepParameters(environmentStepParameters)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .build())
+        .adviserObtainment(
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                .setParameters(advisorParameters)
+                .build())
+        .skipExpressionChain(false)
+        .build();
   }
 }
