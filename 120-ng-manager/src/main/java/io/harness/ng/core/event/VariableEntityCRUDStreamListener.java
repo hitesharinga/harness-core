@@ -1,6 +1,7 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.HARD_DELETE_VARIABLES;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -14,6 +15,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperServiceImpl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,10 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class VariableEntityCRUDStreamListener implements MessageListener {
   private final VariableEntityCRUDEventHandler variableEntityCRUDEventHandler;
+  private final NGFeatureFlagHelperServiceImpl ngFeatureFlagHelperService;
 
   @Inject
-  public VariableEntityCRUDStreamListener(VariableEntityCRUDEventHandler variableEntityCRUDEventHandler) {
+  public VariableEntityCRUDStreamListener(VariableEntityCRUDEventHandler variableEntityCRUDEventHandler,
+      NGFeatureFlagHelperServiceImpl ngFeatureFlagHelperService) {
     this.variableEntityCRUDEventHandler = variableEntityCRUDEventHandler;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -78,6 +83,10 @@ public class VariableEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processOrganizationDeleteEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
+    if (!ngFeatureFlagHelperService.isEnabled(
+            organizationEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_VARIABLES)) {
+      return true;
+    }
     return variableEntityCRUDEventHandler.deleteAssociatedVariables(
         organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier(), null);
   }
@@ -114,6 +123,9 @@ public class VariableEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    if (!ngFeatureFlagHelperService.isEnabled(projectEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_VARIABLES)) {
+      return true;
+    }
     return variableEntityCRUDEventHandler.deleteAssociatedVariables(projectEntityChangeDTO.getAccountIdentifier(),
         projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
   }
