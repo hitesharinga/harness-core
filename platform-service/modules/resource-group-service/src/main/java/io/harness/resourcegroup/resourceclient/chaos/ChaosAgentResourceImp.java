@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({@Inject}))
 @Slf4j
-public class ChaosAgentResourceImp implements Resource {
+public class ChaosAgentResourceImpl implements Resource {
     @Override
     public String getType() {
         return "CHAOS_AGENT";
