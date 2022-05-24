@@ -24,18 +24,12 @@ public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<Cu
 
   @Override
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, CustomStageNode stageNode) {
-    // TODO: @vaibhav.si handle filters
+    // No filter required for custom stage, will be shown in all modules CI, CD etc.
     return null;
   }
 
   @Override
   public Class<CustomStageNode> getFieldClass() {
     return CustomStageNode.class;
-  }
-
-  @Override
-  public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, CustomStageNode stageNode) {
-    // TODO: @vaibhav.si handle
-    return FilterCreationResponse.builder().build();
   }
 }
