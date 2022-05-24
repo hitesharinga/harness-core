@@ -97,6 +97,7 @@ import io.harness.managerclient.SafeHttpCall;
 import io.harness.network.Http;
 import io.harness.rest.RestResponse;
 import io.harness.security.SignVerifier;
+import io.harness.security.TokenGeneratorV2;
 import io.harness.threading.Schedulable;
 import io.harness.utils.ProcessControl;
 import io.harness.version.VersionInfoManager;
@@ -161,6 +162,10 @@ import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.filefilter.AgeFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
@@ -228,6 +233,9 @@ public class WatcherServiceImpl implements WatcherService {
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
 
+  public static final HttpClient httpClient = new DefaultHttpClient();
+  TokenGeneratorV2 HS256TokenGenerator;
+
   @Override
   public void run(boolean upgrade) {
     WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
@@ -235,7 +243,8 @@ public class WatcherServiceImpl implements WatcherService {
     log.info("Watcher will start running on JRE {}", watcherJreVersion);
 
     performRecencyCheck();
-
+    HS256TokenGenerator =
+        new TokenGeneratorV2(watcherConfiguration.getAccountId(), watcherConfiguration.getDelegateToken());
     try {
       log.info(upgrade ? "[New] Upgraded watcher process started. Sending confirmation" : "Watcher process started");
       log.info("Multiversion: {}", multiVersion);
@@ -1372,7 +1381,14 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   String getResponseStringFromUrl() throws IOException {
-    return Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    if (!watcherConfiguration.isFetchWatcherVersionFromManager()) {
+      return Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    }
+
+    HttpGet request = new HttpGet(watcherConfiguration.getUpgradeCheckLocation());
+    request.setHeader(HttpHeaders.AUTHORIZATION, "Delegate " + HS256TokenGenerator.getHS256JwtToken());
+    org.apache.http.HttpResponse response = httpClient.execute(request);
+    return response.toString();
   }
 
   private static void logConfigWatcherYml() {

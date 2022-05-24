@@ -32,6 +32,7 @@ public class WatcherConfiguration {
   private boolean fileHandlesMonitoringEnabled;
   private long fileHandlesMonitoringIntervalInMinutes;
   private long fileHandlesLogsRetentionInMinutes;
+  private boolean fetchWatcherVersionFromManager;
 
   // TODO: This method will get removed once we rolled out new delegate.
   public String getDelegateToken() {
