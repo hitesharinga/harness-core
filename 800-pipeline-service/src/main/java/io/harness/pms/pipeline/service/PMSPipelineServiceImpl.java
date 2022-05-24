@@ -14,6 +14,7 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -31,8 +32,12 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.PmsFeatureFlagService;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
+import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -71,6 +76,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private CommonStepInfo commonStepInfo;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+
   public static String CREATING_PIPELINE = "creating new pipeline";
   public static String UPDATING_PIPELINE = "updating existing pipeline";
 
@@ -108,6 +115,24 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(String.format(
           "Error while saving pipeline [%s]: %s", pipelineEntity.getIdentifier(), ExceptionUtils.getMessage(e)));
     }
+  }
+
+  @Override
+  public ResponseDTO<PipelineSaveResponse> clone(PipelineEntity destPipelineEntity) {
+    boolean isGovernanceEnabled =
+        pmsFeatureFlagService.isEnabled(destPipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    GovernanceMetadata destGovernanceMetadata =
+        pmsPipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(destPipelineEntity, isGovernanceEnabled);
+    if (destGovernanceMetadata.getDeny()) {
+      return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build());
+    }
+    PipelineEntity clonedPipelineEntity = create(destPipelineEntity);
+
+    return ResponseDTO.newResponse(clonedPipelineEntity.getVersion().toString(),
+        PipelineSaveResponse.builder()
+            .governanceMetadata(destGovernanceMetadata)
+            .identifier(clonedPipelineEntity.getIdentifier())
+            .build());
   }
 
   @Override
