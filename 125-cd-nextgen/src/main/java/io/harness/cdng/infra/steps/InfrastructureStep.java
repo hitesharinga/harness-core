@@ -78,9 +78,11 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -301,5 +303,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     if (logCallback != null) {
       logCallback.saveExecutionLog(line);
     }
+  }
+
+  public List<String> getLogKeys(Ambiance ambiance) {
+    return Lists.newArrayList("Execute");
+  }
+
+  public List<String> getCommandUnits(Ambiance ambiance) {
+    return Lists.newArrayList("Execute");
   }
 }
