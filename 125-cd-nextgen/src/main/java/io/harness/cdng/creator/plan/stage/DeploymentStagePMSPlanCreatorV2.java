@@ -8,26 +8,24 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
-import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
+import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
-import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -50,25 +48,46 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.utils.YamlPipelineUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+
+/**
+ * Stage plan graph V1 -
+ *  Stage
+ *      spec (1 children, serviceConfig, next = infra)
+ *          serviceConfig (1 children, serviceNode)
+ *              service (next = serviceDefinitionNode)
+ *              serviceDefinition (1 children, env)
+ *                Environment (next = spec node)
+ *          infrastructure. envRef
+ *          execution
+ *
+ * Stage plan graph V2 -
+ *  Stage
+ *      spec (1 children, service)
+ *          service (1 children, serviceDefinition, next = infra)
+ *              serviceDefinition (1 children, env)
+ *                Environment (next = spec node)
+ *                spec
+ *                  artifacts
+ *                  manifests
+ *          infrastructure/Gitops
+ *          execution
+ */
 
 @OwnedBy(CDC)
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
@@ -76,6 +95,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServicePlanCreator servicePlanCreator;
 
   @Inject private EnvironmentService environmentService;
+  @Inject private ServiceEntityService serviceEntityService;
   @Inject private InfrastructureEntityService infrastructure;
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -124,56 +144,51 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, DeploymentStageNode field) {
+      PlanCreationContext ctx, DeploymentStageNode stageNode) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     try {
       // Validate Stage Failure strategy.
-      validateFailureStrategy(field);
+      validateFailureStrategy(stageNode);
 
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
 
-      // Adding service child by resolving the serviceField
-      YamlField serviceField = getResolvedServiceField(specField);
-      String serviceNodeUuid = serviceField.getNode().getUuid();
+      // Spec node is also added in this method
+      addServiceDependency(planCreationResponseMap, specField, stageNode, ctx);
 
-      PipelineInfrastructure pipelineInfrastructure =
-          ((DeploymentStageConfig) field.getStageInfoConfig()).getInfrastructure();
+      PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
+      addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure);
 
-      // Adding Spec node
-      planCreationResponseMap.put(specField.getNode().getUuid(),
-          PlanCreationResponse.builder().dependencies(getDependenciesForSpecNode(specField, serviceNodeUuid)).build());
-
-      // Adding dependency for service
-      // Adding serviceField to yamlUpdates as its resolved value should be updated.
-      planCreationResponseMap.put(serviceNodeUuid,
-          PlanCreationResponse.builder()
-              .dependencies(getDependenciesForService(serviceField, pipelineInfrastructure))
-              .yamlUpdates(YamlUpdates.newBuilder()
-                               .putFqnToYaml(serviceField.getYamlPath(),
-                                   YamlUtils.writeYamlString(serviceField).replace("---\n", ""))
-                               .build())
-              .build());
-
-      YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
-      if (infraField == null) {
-        throw new InvalidRequestException("Infrastructure section cannot be absent in a pipeline");
+      // Add dependency for execution
+      YamlField executionField = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION);
+      if (executionField == null) {
+        throw new InvalidRequestException("Execution section cannot be absent in a pipeline");
       }
+      addCDExecutionDependencies(planCreationResponseMap, executionField);
 
-      // EnvironmentYamlV2
-      EnvironmentYamlV2 environmentV2 = field.getDeploymentStageConfig().getEnvironment();
-      if (environmentV2 != null) {
-        // TODO: need to fetch gitOpsEnabled from serviceDefinition for gitOps cluster. Currently  passing hard coded
-        // value as false
-        boolean gitOpsEnabled = false;
-        EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
-            resolveRefs(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-                ctx.getMetadata().getProjectIdentifier(), environmentV2, gitOpsEnabled);
-        addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
-            specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML));
-      }
+      return planCreationResponseMap;
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
+    }
+  }
 
+  private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      PipelineInfrastructure pipelineInfrastructure) throws IOException {
+    YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
+    EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
+
+    if (infraField != null && environmentV2 != null) {
+      throw new InvalidRequestException("Infrastructure and Environment cannot be siblings of each other");
+    }
+
+    if (infraField == null && environmentV2 == null) {
+      throw new InvalidRequestException("Infrastructure Or Environment section is missing");
+    }
+
+    if (infraField != null) {
       // Adding infrastructure node
       PlanNode infraStepNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(pipelineInfrastructure);
       planCreationResponseMap.put(
@@ -196,33 +211,40 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlNode infraNode = infraField.getNode();
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSection(
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer));
-
-      // Add dependency for execution
-      YamlField executionField = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION);
-      if (executionField == null) {
-        throw new InvalidRequestException("Execution section cannot be absent in a pipeline");
-      }
-      addCDExecutionDependencies(planCreationResponseMap, executionField);
-
-      return planCreationResponseMap;
-    } catch (IOException e) {
-      throw new InvalidRequestException(
-          "Invalid yaml for Deployment stage with identifier - " + field.getIdentifier(), e);
+    } else {
+      // TODO: need to fetch gitOpsEnabled from serviceDefinition for gitOps cluster. Currently  passing hard coded
+      // value as false
+      boolean gitOpsEnabled = false;
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
+          ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
+          ctx.getMetadata().getProjectIdentifier(), environmentV2, gitOpsEnabled, environmentService, infrastructure);
+      addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
+          specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled);
     }
   }
 
   @VisibleForTesting
   void addEnvironmentV2Dependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField)
-      throws IOException {
-    YamlField updatedEnvironmentYamlField =
-        fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
+      boolean gitOpsEnabled) throws IOException {
+    YamlField updatedEnvironmentYamlField = EnvironmentPlanCreatorHelper.fetchEnvironmentPlanCreatorConfigYaml(
+        environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
     String environmentUuid = updatedEnvironmentYamlField.getNode().getUuid();
     environmentYamlFieldMap.put(environmentUuid, updatedEnvironmentYamlField);
+
+    // TODO: Need to pass serviceSpecNode uuid as dependency
+    final Dependency envDependency = Dependency.newBuilder()
+                                         .putAllMetadata(ImmutableMap.of(YAMLFieldNameConstants.GITOPS_ENABLED,
+                                             ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled))))
+                                         .build();
+
     planCreationResponseMap.put(updatedEnvironmentYamlField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(environmentYamlFieldMap))
+            .dependencies(DependenciesUtils.toDependenciesProto(environmentYamlFieldMap)
+                              .toBuilder()
+                              .putDependencyMetadata(updatedEnvironmentYamlField.getNode().getUuid(), envDependency)
+                              .build())
             .yamlUpdates(YamlUpdates.newBuilder()
                              .putFqnToYaml(updatedEnvironmentYamlField.getYamlPath(),
                                  YamlUtils.writeYamlString(updatedEnvironmentYamlField).replace("---\n", ""))
@@ -230,62 +252,27 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build());
   }
 
-  @VisibleForTesting
-  YamlField fetchEnvironmentPlanCreatorConfigYaml(
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField) {
-    try {
-      String yamlString = YamlPipelineUtils.getYamlString(environmentPlanCreatorConfig);
-      YamlField yamlField = YamlUtils.injectUuidInYamlField(yamlString);
-      return new YamlField(YamlTypes.ENVIRONMENT_YAML,
-          new YamlNode(YamlTypes.ENVIRONMENT_YAML, yamlField.getNode().getCurrJsonNode(),
-              originalEnvironmentField.getNode().getParentNode()));
-    } catch (IOException e) {
-      throw new InvalidRequestException("Invalid environment yaml", e);
-    }
-  }
-
-  public Dependencies getDependenciesForService(YamlField serviceField, PipelineInfrastructure infraConfig) {
-    Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
+  private void addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      YamlField specField, DeploymentStageNode stageNode, PlanCreationContext ctx) throws IOException {
+    // Adding service child by resolving the serviceField
+    YamlField serviceField = ServicePlanCreatorHelper.getResolvedServiceField(
+        specField, stageNode, servicePlanCreator, serviceEntityService, ctx);
     String serviceNodeUuid = serviceField.getNode().getUuid();
-    serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
 
-    Map<String, ByteString> serviceDependencyMap = new HashMap<>();
-    serviceDependencyMap.put(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS,
-        ByteString.copyFrom(
-            kryoSerializer.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
-    serviceDependencyMap.put(YamlTypes.ENVIRONMENT_NODE_ID,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes("environment-" + infraConfig.getUuid())));
+    // Adding Spec node
+    planCreationResponseMap.put(specField.getNode().getUuid(),
+        PlanCreationResponse.builder().dependencies(getDependenciesForSpecNode(specField, serviceNodeUuid)).build());
 
-    Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
-    return DependenciesUtils.toDependenciesProto(serviceYamlFieldMap)
-        .toBuilder()
-        .putDependencyMetadata(serviceNodeUuid, serviceDependency)
-        .build();
-  }
-
-  private YamlField getResolvedServiceField(YamlField parentSpecNode) {
-    YamlField serviceField = parentSpecNode.getNode().getField(YamlTypes.SERVICE_CONFIG);
-    if (serviceField == null) {
-      throw new InvalidRequestException("ServiceConfig Section cannot be absent in a pipeline");
-    }
-    ServiceConfig serviceConfig;
-    try {
-      serviceConfig = YamlUtils.read(serviceField.getNode().toString(), ServiceConfig.class);
-
-      // Resolving service useFromStage.
-      if (serviceConfig.getUseFromStage() == null) {
-        return serviceField;
-      } else {
-        ServiceConfig actualServiceConfig = servicePlanCreator.getActualServiceConfig(serviceConfig, serviceField);
-        String serviceConfigYaml = YamlPipelineUtils.getYamlString(actualServiceConfig);
-        YamlField updatedServiceField = YamlUtils.injectUuidInYamlField(serviceConfigYaml);
-        return new YamlField("serviceConfig",
-            new YamlNode("serviceConfig", updatedServiceField.getNode().getCurrJsonNode(),
-                serviceField.getNode().getParentNode()));
-      }
-    } catch (IOException e) {
-      throw new InvalidRequestException("Invalid service yaml", e);
-    }
+    // Adding dependency for service
+    // Adding serviceField to yamlUpdates as its resolved value should be updated.
+    planCreationResponseMap.put(serviceNodeUuid,
+        PlanCreationResponse.builder()
+            .dependencies(ServicePlanCreatorHelper.getDependenciesForService(serviceField, stageNode, kryoSerializer))
+            .yamlUpdates(YamlUpdates.newBuilder()
+                             .putFqnToYaml(serviceField.getYamlPath(),
+                                 YamlUtils.writeYamlString(serviceField).replace("---\n", ""))
+                             .build())
+            .build());
   }
 
   public Dependencies getDependenciesForSpecNode(YamlField specField, String childNodeUuid) {
@@ -315,57 +302,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build());
   }
 
-  private List<InfrastructureEntity> getInfraStructureEntityList(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, EnvironmentYamlV2 environmentV2) {
-    List<InfrastructureEntity> infrastructureEntityList = new ArrayList<>();
-    String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environmentV2.getDeployToAll()) {
-      List<String> infraIdentifierList =
-          environmentV2.getInfrastructureDefinitions()
-              .stream()
-              .map(infraStructureDefinitionYaml -> infraStructureDefinitionYaml.getRef().getValue())
-              .collect(Collectors.toList());
-      infrastructureEntityList = infrastructure.getAllInfrastructureFromIdentifierList(
-          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
-    } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions())) {
-        throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
-            environmentV2.getInfrastructureDefinitions()));
-      }
-      infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
-          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
-    }
-    return infrastructureEntityList;
-  }
-  // TODO: currently this function do not handle runtime inputs value in Environment and Infrastructure Entities. Need
-  // to handle this in future
-  private EnvironmentPlanCreatorConfig resolveRefs(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled) {
-    // TODO: check the case when its a runtime value if its possible for it to have here
-    Optional<Environment> environment = environmentService.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), false);
-
-    String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environment.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("No environment found with %s identifier in %s project in %s org and %s account", envIdentifier,
-              projectIdentifier, orgIdentifier, accountIdentifier));
-    }
-
-    if (environment.isPresent()) {
-      // if gitOpsEnabled = false, then  handle infrastructure
-      if (!gitOpsEnabled) {
-        List<InfrastructureEntity> infrastructureEntityList =
-            getInfraStructureEntityList(accountIdentifier, orgIdentifier, projectIdentifier, environmentV2);
-        return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-            environment.get(), infrastructureEntityList);
-      }
-      // TODO: need to handle gitOps cluster
-    }
-
-    throw new InvalidRequestException(
-        String.format("Environment with id %s does not exists or has been deleted", envIdentifier));
-  }
   private void validateFailureStrategy(DeploymentStageNode stageNode) {
     // Failure strategy should be present.
     List<FailureStrategyConfig> stageFailureStrategies = stageNode.getFailureStrategies();

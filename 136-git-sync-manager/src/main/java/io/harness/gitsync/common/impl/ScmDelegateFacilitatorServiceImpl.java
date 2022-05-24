@@ -17,6 +17,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -54,10 +55,12 @@ import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.beans.InfoForGitPush;
+import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
+import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.helper.FileBatchResponseMapper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.PRFileListMapper;
@@ -199,7 +202,30 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public CreatePRResponse createPullRequest(
       Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    return null;
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), decryptedConnector);
+    ScmPRTaskParams scmPRTaskParams = ScmPRTaskParams.builder()
+                                          .scmConnector(decryptedConnector)
+                                          .sourceBranchName(sourceBranch)
+                                          .targetBranchName(targetBranch)
+                                          .prTitle(title)
+                                          .gitPRTaskType(GitPRTaskType.CREATE_PR_V2)
+                                          .encryptedDataDetails(encryptionDetails)
+                                          .build();
+    final Map<String, String> ngTaskSetupAbstractionsWithOwner = getNGTaskSetupAbstractionsWithOwner(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                  .accountId(scope.getAccountIdentifier())
+                                                  .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
+                                                  .taskType(TaskType.SCM_PULL_REQUEST_TASK.name())
+                                                  .taskParameters(scmPRTaskParams)
+                                                  .executionTimeout(Duration.ofMinutes(2))
+                                                  .build();
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmPRTaskResponseData scmCreatePRResponse = (ScmPRTaskResponseData) delegateResponseData;
+    return scmCreatePRResponse.getCreatePRResponse();
   }
 
   @Override
@@ -703,6 +729,62 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       return CreateBranchResponse.parseFrom(scmGitRefTaskResponseData.getCreateBranchResponse());
     } catch (InvalidProtocolBufferException e) {
       String errorMsg = String.format(errorFormat, "create branch", scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier());
+      log.error(errorMsg, e);
+      throw new UnexpectedException(errorMsg);
+    }
+  }
+
+  @Override
+  public CreateFileResponse createFile(CreateGitFileRequestDTO createGitFileRequestDTO) {
+    GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
+    Scope scope = createGitFileRequestDTO.getScope();
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), createGitFileRequestDTO.getScmConnector());
+    ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .changeType(ChangeType.ADD_V2)
+                                              .scmConnector(createGitFileRequestDTO.getScmConnector())
+                                              .gitFileDetails(gitFileDetails)
+                                              .encryptedDataDetails(encryptionDetails)
+                                              .build();
+
+    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmPushTaskParams, TaskType.SCM_PUSH_TASK);
+
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmPushTaskResponseData scmPushTaskResponseData = (ScmPushTaskResponseData) delegateResponseData;
+    try {
+      return CreateFileResponse.parseFrom(scmPushTaskResponseData.getCreateFileResponse());
+    } catch (InvalidProtocolBufferException e) {
+      String errorMsg = String.format(errorFormat, "create File", scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier());
+      log.error(errorMsg, e);
+      throw new UnexpectedException(errorMsg);
+    }
+  }
+
+  @Override
+  public UpdateFileResponse updateFile(UpdateGitFileRequestDTO updateGitFileRequestDTO) {
+    GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
+    Scope scope = updateGitFileRequestDTO.getScope();
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
+    ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .changeType(ChangeType.UPDATE_V2)
+                                              .scmConnector(updateGitFileRequestDTO.getScmConnector())
+                                              .gitFileDetails(gitFileDetails)
+                                              .encryptedDataDetails(encryptionDetails)
+                                              .build();
+
+    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmPushTaskParams, TaskType.SCM_PUSH_TASK);
+
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmPushTaskResponseData scmPushTaskResponseData = (ScmPushTaskResponseData) delegateResponseData;
+    try {
+      return UpdateFileResponse.parseFrom(scmPushTaskResponseData.getUpdateFileResponse());
+    } catch (InvalidProtocolBufferException e) {
+      String errorMsg = String.format(errorFormat, "update File", scope.getAccountIdentifier(),
           scope.getOrgIdentifier(), scope.getProjectIdentifier());
       log.error(errorMsg, e);
       throw new UnexpectedException(errorMsg);

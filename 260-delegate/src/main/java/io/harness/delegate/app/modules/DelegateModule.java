@@ -471,7 +471,6 @@ import software.wings.helpers.ext.artifactory.ArtifactoryService;
 import software.wings.helpers.ext.artifactory.ArtifactoryServiceImpl;
 import software.wings.helpers.ext.azure.AcrService;
 import software.wings.helpers.ext.azure.AcrServiceImpl;
-import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsServiceImpl;
 import software.wings.helpers.ext.bamboo.BambooService;
@@ -541,6 +540,7 @@ import software.wings.service.impl.aws.delegate.AwsEcsHelperServiceDelegateImpl;
 import software.wings.service.impl.aws.delegate.AwsElbHelperServiceDelegateImpl;
 import software.wings.service.impl.aws.delegate.AwsIamHelperServiceDelegateImpl;
 import software.wings.service.impl.aws.delegate.AwsLambdaHelperServiceDelegateImpl;
+import software.wings.service.impl.aws.delegate.AwsLambdaHelperServiceDelegateNGImpl;
 import software.wings.service.impl.aws.delegate.AwsRoute53HelperServiceDelegateImpl;
 import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.impl.aws.delegate.AwsServiceDiscoveryHelperServiceDelegateImpl;
@@ -599,6 +599,7 @@ import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsIamHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegate;
+import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegateNG;
 import software.wings.service.intfc.aws.delegate.AwsRoute53HelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsServiceDiscoveryHelperServiceDelegate;
@@ -732,7 +733,7 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("backgroundExecutor")
   public ExecutorService backgroundExecutor() {
-    return ThreadPool.create(1, 1, 5, TimeUnit.SECONDS,
+    return ThreadPool.create(1, 5, 5, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("background-%d").setPriority(Thread.MIN_PRIORITY).build());
   }
 
@@ -936,7 +937,6 @@ public class DelegateModule extends AbstractModule {
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);
     bind(AmiBuildService.class).to(AmiBuildServiceImpl.class);
-    bind(AzureHelperService.class);
     bind(AzureMachineImageBuildService.class).to(AzureMachineImageBuildServiceImpl.class);
     bind(CustomBuildService.class).to(CustomBuildServiceImpl.class);
     bind(CustomRepositoryService.class).to(CustomRepositoryServiceImpl.class);
@@ -968,6 +968,7 @@ public class DelegateModule extends AbstractModule {
     bind(AwsAsgHelperServiceDelegate.class).to(AwsAsgHelperServiceDelegateImpl.class);
     bind(AwsCodeDeployHelperServiceDelegate.class).to(AwsCodeDeployHelperServiceDelegateImpl.class);
     bind(AwsLambdaHelperServiceDelegate.class).to(AwsLambdaHelperServiceDelegateImpl.class);
+    bind(AwsLambdaHelperServiceDelegateNG.class).to(AwsLambdaHelperServiceDelegateNGImpl.class);
     bind(AwsAmiHelperServiceDelegate.class).to(AwsAmiHelperServiceDelegateImpl.class);
     bind(GitService.class).to(GitServiceImpl.class);
     bind(LdapDelegateService.class).to(LdapDelegateServiceImpl.class);
