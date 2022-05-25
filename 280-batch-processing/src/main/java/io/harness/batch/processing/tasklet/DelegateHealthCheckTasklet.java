@@ -52,7 +52,7 @@ public class DelegateHealthCheckTasklet implements Tasklet {
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
-    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
+    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     List<PerpetualTaskRecord> perpetualTasks =
         perpetualTaskRecordDao.listValidK8sWatchPerpetualTasksForAccount(accountId);
     List<String> clusterIds = new ArrayList<>();
@@ -68,13 +68,13 @@ public class DelegateHealthCheckTasklet implements Tasklet {
       clusterIds.add(clusterId);
       clusterIdToDelegateIdMap.put(clusterId, perpetualTask.getDelegateId());
     }
-    Instant allowedTime = startTime.minus(Duration.ofMinutes(DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG));
+    Instant allowedTime = endTime.minus(Duration.ofMinutes(DELAY_IN_MINUTES_FOR_LAST_RECEIVED_MSG));
     for (List<String> clusterIdsBatch : Lists.partition(clusterIds, BATCH_SIZE)) {
       List<String> delegateIds =
           clusterIdsBatch.stream().map(clusterIdToDelegateIdMap::get).collect(Collectors.toList());
       List<Delegate> delegates = cloudToHarnessMappingService.obtainDelegateDetails(accountId, delegateIds);
       Set<String> healthyDelegates = delegates.stream()
-                                         .filter(delegate -> isDelegateHealthy(delegate, startTime))
+                                         .filter(delegate -> isDelegateHealthy(delegate, endTime))
                                          .map(Delegate::getUuid)
                                          .collect(Collectors.toSet());
       Map<String, Long> lastReceivedTimeForClusters =
@@ -91,9 +91,9 @@ public class DelegateHealthCheckTasklet implements Tasklet {
     return null;
   }
 
-  private boolean isDelegateHealthy(Delegate delegate, Instant startTime) {
+  private boolean isDelegateHealthy(Delegate delegate, Instant endTime) {
     return delegate.getStatus().equals(DelegateInstanceStatus.ENABLED)
         && Instant.ofEpochMilli(delegate.getLastHeartBeat())
-               .isAfter(startTime.minus(Duration.ofMinutes(MINUTES_FOR_HEALTHY_DELEGATE_HEARTBEAT)));
+               .isAfter(endTime.minus(Duration.ofMinutes(MINUTES_FOR_HEALTHY_DELEGATE_HEARTBEAT)));
   }
 }
