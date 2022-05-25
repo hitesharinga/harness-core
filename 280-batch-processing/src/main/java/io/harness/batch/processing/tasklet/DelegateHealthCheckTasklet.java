@@ -77,14 +77,15 @@ public class DelegateHealthCheckTasklet implements Tasklet {
                                          .filter(delegate -> isDelegateHealthy(delegate, endTime))
                                          .map(Delegate::getUuid)
                                          .collect(Collectors.toSet());
-      List<String> healthyClusters = clusterIdsBatch.stream()
-          .filter(clusterId -> healthyDelegates.contains(clusterIdToDelegateIdMap.get(clusterId)))
-          .collect(Collectors.toList());
+      List<String> healthyClusters =
+          clusterIdsBatch.stream()
+              .filter(clusterId -> healthyDelegates.contains(clusterIdToDelegateIdMap.get(clusterId)))
+              .collect(Collectors.toList());
       Map<String, Long> lastReceivedTimeForClusters =
           lastReceivedPublishedMessageDao.getLastReceivedTimeForClusters(accountId, healthyClusters);
       for (String clusterId : healthyClusters) {
         if (!lastReceivedTimeForClusters.containsKey(clusterId)
-                || Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime)) {
+            || Instant.ofEpochMilli(lastReceivedTimeForClusters.get(clusterId)).isBefore(allowedTime)) {
           log.info("Delegate health check failed for clusterId: {}, delegateId: {}", clusterId,
               clusterIdToDelegateIdMap.get(clusterId));
         }
