@@ -43,7 +43,8 @@ public class CIDelegateTaskExecutor {
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
   }
 
-  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors) {
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
+      List<String> eligibleToExecuteDelegateIds) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
@@ -55,6 +56,7 @@ public class CIDelegateTaskExecutor {
                                                         .executionTimeout(Duration.ofHours(12))
                                                         .taskSetupAbstractions(setupAbstractions)
                                                         .expressionFunctorToken(taskData.getExpressionFunctorToken())
+                                                        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
                                                         .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),

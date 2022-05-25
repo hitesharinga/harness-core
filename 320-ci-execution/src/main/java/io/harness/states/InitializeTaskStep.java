@@ -289,11 +289,11 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
     VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
     if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
-        || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName())) {
+        || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getId())) {
       return builder.build();
     }
 
-    return builder.delegateHostName(vmTaskExecutionResponse.getDelegateMetaInfo().getHostName()).build();
+    return builder.delegateId(vmTaskExecutionResponse.getDelegateMetaInfo().getId()).build();
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {

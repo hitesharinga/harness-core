@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTask {
-  @Getter private String delegateHostname;
+  private String delegateHostname;
   @Getter private String delegateId;
   @Getter private String accountId;
   @Getter private String taskId;
