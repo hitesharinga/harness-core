@@ -16,10 +16,9 @@ import io.harness.remote.client.RestClientUtils;
 import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.PL)
-public class NGFeatureFlagHelperServiceImpl implements FeatureFlagHelperService {
+public class NGFeatureFlagHelperService {
   @Inject AccountClient accountClient;
 
-  @Override
   public boolean isEnabled(String accountId, FeatureName featureName) {
     return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
