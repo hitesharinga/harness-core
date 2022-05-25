@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.core.budget;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -92,6 +93,13 @@ public class BudgetCostServiceImpl implements BudgetCostService {
             .minStartTime(1000 * startTime)
             .maxStartTime(1000 * BudgetUtils.getStartOfCurrentDay() - BudgetUtils.ONE_DAY_MILLIS)
             .build();
+
+    if (period == DAILY) {
+      return viewsQueryHelper.getRoundedDoubleValue(costDataForForecast.getCost()
+          / (Double.valueOf((costDataForForecast.getMaxStartTime() - costDataForForecast.getMinStartTime())
+              / (1000 * (double) BudgetUtils.ONE_DAY_MILLIS))));
+    }
+
     double costTillNow = getActualCost(accountId, perspectiveId, startOfPeriod, period);
     return viewsQueryHelper.getRoundedDoubleValue(
         costTillNow + viewsQueryHelper.getForecastCost(costDataForForecast, Instant.ofEpochMilli(endTime)));
