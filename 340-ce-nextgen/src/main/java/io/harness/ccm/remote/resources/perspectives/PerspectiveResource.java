@@ -10,6 +10,7 @@ package io.harness.ccm.remote.resources.perspectives;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -34,6 +35,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -48,7 +51,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -90,6 +96,13 @@ public class PerspectiveResource {
   private final CCMNotificationService notificationService;
   private final AwsAccountFieldHelper awsAccountFieldHelper;
 
+  private static final String PERSPECTIVE_CREATED = "Perspective Created";
+  private static final String MODULE = "module";
+  private static final String MODULE_NAME = "CCM";
+  private static final String DATA_SOURCES = "data_sources";
+  private static final String IS_CLONE = "is_clone";
+
+  @Inject private TelemetryReporter telemetryReporter;
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
@@ -239,6 +252,13 @@ public class PerspectiveResource {
       ceView.setUuid(null);
       ceView.setViewType(ViewType.CUSTOMER);
     }
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(
+        DATA_SOURCES, ceView.getDataSources().stream().map(Object::toString).collect(Collectors.joining(",")));
+    properties.put(IS_CLONE, clone ? "YES" : "NO");
+    telemetryReporter.sendTrackEvent(
+        PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView)));
   }
 
@@ -372,6 +392,17 @@ public class PerspectiveResource {
           "perspectiveId") String perspectiveId,
       @Valid @NotNull @Parameter(required = true, description = "Name for the Perspective clone") @QueryParam(
           "cloneName") String cloneName) {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(DATA_SOURCES,
+        ceViewService.get(perspectiveId)
+            .getDataSources()
+            .stream()
+            .map(Object::toString)
+            .collect(Collectors.joining(",")));
+    properties.put(IS_CLONE, "YES");
+    telemetryReporter.sendTrackEvent(
+        PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName)));
   }
 }
