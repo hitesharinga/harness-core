@@ -2044,5 +2044,10 @@ public class NexusServiceTest extends WingsBaseTest {
                                RepositoryFormat.npm.name(), nexusThreeConfig, "npm-internal", "npm-app1", "1.0.0"))
         .isInstanceOf(java.lang.UnsupportedOperationException.class)
         .hasMessage("Nexus 3.x does not support getVersion for parameterized artifact stream");
+
+    assertThatThrownBy(
+        () -> nexusService.getVersion(nexusThreeConfig, "npm-internal", "npm-app1", null, null, null, "1.0.0"))
+        .isInstanceOf(java.lang.UnsupportedOperationException.class)
+        .hasMessage("Nexus 3.x does not support getVersion for parameterized artifact stream");
   }
 }

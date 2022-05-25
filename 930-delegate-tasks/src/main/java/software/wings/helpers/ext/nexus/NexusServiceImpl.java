@@ -270,21 +270,21 @@ public class NexusServiceImpl implements NexusService {
   @SuppressWarnings("squid:S00107")
   public List<BuildDetails> getVersion(NexusRequest nexusConfig, String repoId, String groupId, String artifactName,
       String extension, String classifier, String buildNo) {
-    try {
-      boolean isNexusTwo = nexusConfig.getVersion() == null || nexusConfig.getVersion().equalsIgnoreCase("2.x");
-      if (isNexusTwo) {
+    boolean isNexusTwo = nexusConfig.getVersion() == null || nexusConfig.getVersion().equalsIgnoreCase("2.x");
+    if (isNexusTwo) {
+      try {
         return nexusTwoService.getVersion(nexusConfig, repoId, groupId, artifactName, extension, classifier, buildNo);
-      } else {
-        throw new InvalidArtifactServerException(
-            "Nexus 3.x does not support getVersion for parameterized artifact stream");
+      } catch (final IOException e) {
+        log.error(
+            format(
+                "Error occurred while retrieving versions from Nexus server %s for Repository %s under group id %s and artifact name %s",
+                nexusConfig.getNexusUrl(), repoId, groupId, artifactName),
+            e);
+        handleException(e);
       }
-    } catch (final IOException e) {
-      log.error(
-          format(
-              "Error occurred while retrieving versions from Nexus server %s for Repository %s under group id %s and artifact name %s",
-              nexusConfig.getNexusUrl(), repoId, groupId, artifactName),
-          e);
-      handleException(e);
+    } else {
+      throw new UnsupportedOperationException(
+          "Nexus 3.x does not support getVersion for parameterized artifact stream");
     }
     return new ArrayList<>();
   }
