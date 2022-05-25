@@ -12,7 +12,6 @@ import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceKryoRegister;
-import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.RbacCoreKryoRegistrar;
 import io.harness.serializer.kryo.SMCoreKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
@@ -30,7 +29,6 @@ public class DelegateServiceRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
-          .addAll(CgOrchestrationRegistrars.kryoRegistrars)
           .addAll(DelegateServiceBeansRegistrars.kryoRegistrars)
           .add(CgOrchestrationBeansKryoRegistrar.class)
           .add(CommonEntitiesKryoRegistrar.class)
@@ -40,7 +38,6 @@ public class DelegateServiceRegistrars {
           .add(RbacCoreKryoRegistrar.class)
           .add(SMCoreKryoRegistrar.class)
           .add(SecretManagerClientKryoRegistrar.class)
-          .add(ProjectAndOrgKryoRegistrar.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .build();
@@ -49,17 +46,14 @@ public class DelegateServiceRegistrars {
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(DelegateServiceBeansRegistrars.morphiaRegistrars)
           .add(CommonEntitiesMorphiaRegister.class)
-          .addAll(CgOrchestrationRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .add(DelegateTasksMorphiaRegistrar.class)
-          .addAll(EventsFrameworkRegistrars.morphiaRegistrars)
           .add(FeatureFlagBeansMorphiaRegistrar.class)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .addAll(SMCoreRegistrars.morphiaRegistrars)
           .addAll(SecretManagerClientRegistrars.morphiaRegistrars)
-          .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .add(DelegateServiceMorphiaRegistrar.class)
           .build();
 }

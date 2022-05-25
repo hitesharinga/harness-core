@@ -16,7 +16,6 @@ import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.OrchestrationKryoRegistrar;
-import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
 import io.harness.serializer.morphia.OrchestrationMorphiaRegistrar;
 import io.harness.serializer.morphia.converters.AdviserObtainmentMorphiaConverter;
@@ -148,7 +147,6 @@ public class OrchestrationRegistrars {
           .addAll(OrchestrationDelayRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
-          .add(ProjectAndOrgKryoRegistrar.class)
           .add(SecretManagerClientKryoRegistrar.class)
           .add(OrchestrationKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)

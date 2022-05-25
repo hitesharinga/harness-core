@@ -7,6 +7,7 @@ shared_dependencies = [
     "//878-ng-common-utilities:module",
     "//879-pms-sdk:module",
     "//930-delegate-tasks:module",
+    "//950-ng-project-n-orgs:module",
     "//960-persistence:module",
     "//999-annotations:module",
     "//product/ci/engine/proto:ciengine_java_proto",

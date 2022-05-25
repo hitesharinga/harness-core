@@ -11,7 +11,11 @@ java_library(
     deps = [
         "//:lombok",
         "//867-polling-contracts:module",
-        "//870-cg-orchestration:module",
+        "//890-sm-core:module",
+        "//920-delegate-agent-beans:module",
+        "//920-delegate-service-beans:module",
+        "//930-delegate-tasks:module",
+        "//950-wait-engine:module",
         "//952-remote-observers:module",
         "//955-outbox-sdk:module",
         "//clients/audit:module",
