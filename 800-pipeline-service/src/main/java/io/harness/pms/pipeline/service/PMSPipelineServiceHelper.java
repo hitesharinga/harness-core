@@ -193,8 +193,9 @@ public class PMSPipelineServiceHelper {
     String orgIdentifier = pipelineEntity.getOrgIdentifier();
     String projectIdentifier = pipelineEntity.getProjectIdentifier();
     // Apply all the templateRefs(if any) then check for schema validation.
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity);
+    TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
+        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+        pipelineEntity.getYaml(), false, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
     // validate unique fqn in resolveTemplateRefsInPipeline
@@ -202,8 +203,14 @@ public class PMSPipelineServiceHelper {
     pipelineEntity.setTemplateReference(
         EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries()));
     if (checkAgainstOPAPolicies) {
-      String expandedPipelineJSON =
-          fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+      String resolveTemplateRefsInPipelineWithOpaResponse =
+          templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+      pmsYamlSchemaService.validateYamlSchema(
+          accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipelineWithOpaResponse);
+      // validate unique fqn in resolveTemplateRefsInPipeline
+      pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipelineWithOpaResponse);
+      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
+          accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipelineWithOpaResponse);
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }

@@ -101,6 +101,53 @@ public class PMSPipelineTemplateHelper {
     return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
   }
 
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
+      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)
+        && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
+      String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
+      long start = System.currentTimeMillis();
+      try {
+        GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+        if (gitEntityInfo != null) {
+          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId,
+              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true,
+              TemplateApplyRequestDTO.builder()
+                  .originalEntityYaml(yaml)
+                  .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .build()));
+        }
+        return NGRestUtils.getResponse(
+            templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .build()));
+      } catch (InvalidRequestException e) {
+        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
+          throw new NGTemplateResolveException(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata());
+        } else {
+          throw new NGTemplateException(e.getMessage(), e);
+        }
+      } catch (NGTemplateResolveException e) {
+        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO());
+      } catch (UnexpectedException e) {
+        log.error("Error connecting to Template Service", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception e) {
+        log.error("Unknown un-exception in resolving templates", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } finally {
+        log.info("[PMS_Template] template resolution took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
+      }
+    }
+    return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+  }
+
   public List<EntityDetailProtoDTO> getTemplateReferencesForGivenYaml(
       String accountId, String orgId, String projectId, String yaml) {
     if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT)) {
