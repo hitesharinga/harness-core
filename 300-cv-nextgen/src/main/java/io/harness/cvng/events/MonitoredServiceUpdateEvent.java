@@ -7,6 +7,8 @@
 
 package io.harness.cvng.events;
 
+import static io.harness.cvng.core.resources.MonitoredServiceResource.MONITORED_SERVICE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -34,7 +36,7 @@ public class MonitoredServiceUpdateEvent extends AbstractMonitoredServiceConfigu
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, monitoredServiceDTO.getName());
-    return Resource.builder().identifier(monitoredServiceId).labels(labels).type(ResourceTypeConstants.SERVICE).build();
+    return Resource.builder().identifier(monitoredServiceId).labels(labels).type(MONITORED_SERVICE).build();
   }
 
   @Override

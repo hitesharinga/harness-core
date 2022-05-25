@@ -22,7 +22,7 @@ server:
     appenders: []
 
 logging:
-  level: INFO
+  level: DEBUG
   loggers:
     com.novemberain.quartz.mongodb: WARN
     org.quartz.plugins: WARN
@@ -59,6 +59,13 @@ templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: true
 
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
@@ -119,7 +126,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: true
 
 portalUrl: https://localhost:8181/
 

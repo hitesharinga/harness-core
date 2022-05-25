@@ -14,6 +14,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.get
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.context.GlobalContext;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
@@ -73,6 +74,7 @@ import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
+import io.harness.cvng.events.MonitoredServiceCreateEvent;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -96,6 +98,8 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
+import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PageUtils;
@@ -103,7 +107,10 @@ import io.harness.utils.PageUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
+// import graphql.Assert;
+import com.google.inject.Binder;
 import com.google.inject.Inject;
+import com.google.inject.multibindings.MapBinder;
 import com.mongodb.DuplicateKeyException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -175,11 +182,21 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
+  @Inject private OutboxService outboxService;
 
   private static final String templateIdentifierName = "monitoredServiceName";
 
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
+    //    Assert.assertNotNull(outboxService);
+    outboxService.save(MonitoredServiceCreateEvent.builder()
+                           .accountIdentifier(accountId)
+                           .monitoredServiceDTO(monitoredServiceDTO)
+                           .monitoredServiceId(monitoredServiceDTO.getIdentifier())
+                           .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+                           .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+                           .build());
+
     ServiceEnvironmentParams environmentParams = ServiceEnvironmentParams.builder()
                                                      .accountIdentifier(accountId)
                                                      .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())

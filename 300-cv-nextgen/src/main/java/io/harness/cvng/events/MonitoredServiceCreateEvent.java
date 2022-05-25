@@ -34,7 +34,11 @@ public class MonitoredServiceCreateEvent extends AbstractMonitoredServiceConfigu
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, monitoredServiceDTO.getName());
-    return Resource.builder().identifier(monitoredServiceId).labels(labels).type(ResourceTypeConstants.SERVICE).build();
+    return Resource.builder()
+        .identifier(monitoredServiceId)
+        .labels(labels)
+        .type(ResourceTypeConstants.MONITORED_SERVICE)
+        .build();
   }
 
   @Override
