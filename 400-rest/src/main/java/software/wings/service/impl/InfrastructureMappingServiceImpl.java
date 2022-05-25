@@ -99,6 +99,7 @@ import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsAmiInfrastructureMapping.AwsAmiInfrastructureMappingKeys;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.AwsInfrastructureMapping.AwsInfrastructureMappingKeys;
 import software.wings.beans.AwsLambdaInfraStructureMapping;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureInfrastructureMapping;
@@ -138,6 +139,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.KubernetesContainerTask;
+import software.wings.beans.container.KubernetesContainerTaskUtils;
 import software.wings.beans.infrastructure.Host;
 import software.wings.common.InfrastructureConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -536,6 +538,8 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       }
     }
 
+    updateMissingFields(infraMapping, savedInfraMapping);
+
     String accountId = appService.getAccountIdByAppId(infraMapping.getAppId());
     if (!savedInfraMapping.isSample()) {
       eventPublishHelper.publishAccountEvent(
@@ -552,6 +556,20 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     }
 
     return savedInfraMapping;
+  }
+
+  private void updateMissingFields(InfrastructureMapping infraMapping, InfrastructureMapping savedInfraMapping) {
+    if (savedInfraMapping instanceof AwsInfrastructureMapping && infraMapping instanceof AwsInfrastructureMapping
+        && ((AwsInfrastructureMapping) savedInfraMapping).getAwsInstanceFilter() == null
+        && ((AwsInfrastructureMapping) infraMapping).getAwsInstanceFilter() != null) {
+      try {
+        wingsPersistence.updateField(AwsInfrastructureMapping.class, savedInfraMapping.getUuid(),
+            AwsInfrastructureMappingKeys.awsInstanceFilter,
+            ((AwsInfrastructureMapping) infraMapping).getAwsInstanceFilter());
+      } catch (Exception e) {
+        log.error("Encountered exception while updating AwsInfrastructureMapping {}.", savedInfraMapping.getUuid(), e);
+      }
+    }
   }
 
   @Override
@@ -2335,7 +2353,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         app.getUuid(), service.getUuid(), deploymentType.name());
     if (containerTask instanceof KubernetesContainerTask) {
       KubernetesContainerTask kubernetesContainerTask = (KubernetesContainerTask) containerTask;
-      isStatefulSet = kubernetesContainerTask.checkStatefulSet();
+      isStatefulSet = KubernetesContainerTaskUtils.checkStatefulSet(kubernetesContainerTask.getAdvancedConfig());
     }
 
     String kubernetesName;

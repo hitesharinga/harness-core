@@ -7,6 +7,8 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.beans.Application.ApplicationKeys;
 import static software.wings.beans.InfrastructureMapping.InfrastructureMappingKeys;
 
@@ -15,6 +17,8 @@ import io.harness.persistence.HIterator;
 
 import software.wings.beans.Application;
 import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.AwsInfrastructureMapping.AwsInfrastructureMappingKeys;
+import software.wings.beans.AwsInstanceFilter;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.dl.WingsPersistence;
 import software.wings.infra.AwsInstanceInfrastructure;
@@ -90,6 +94,7 @@ public class UpdateNameInAwsInfrastructureMappingMigration implements Migration 
               .region(infrastructureMapping.getRegion())
               .awsInstanceFilter(infrastructureMapping.getAwsInstanceFilter())
               .autoScalingGroupName(infrastructureMapping.getAutoScalingGroupName())
+              .provisionInstances(infrastructureMapping.isProvisionInstances())
               .build();
 
       String newName = infrastructureDefinitionHelper.getNameFromInfraDefinition(
@@ -102,18 +107,27 @@ public class UpdateNameInAwsInfrastructureMappingMigration implements Migration 
           infrastructureMapping.getServiceId());
       String currentName = infrastructureMapping.getName();
 
-      if (!newName.equals(currentName)) {
-        Map<String, Object> updatedFields = new HashMap<>();
+      Map<String, Object> updatedFields = new HashMap<>();
 
+      if (!newName.equals(currentName)) {
         updatedFields.put(InfrastructureMappingKeys.name, newName);
         updatedFields.put(InfrastructureMappingKeys.nameBk, currentName);
+      }
+
+      // The issue is on first save(), if empty awsInstanceFilter object is there, we are not adding it in database. On
+      // subsequent updates, we are able to add!
+      if (infrastructureMapping.getAwsInstanceFilter() == null && !infrastructureMapping.isProvisionInstances()) {
+        updatedFields.put(AwsInfrastructureMappingKeys.awsInstanceFilter, AwsInstanceFilter.builder().build());
+      }
+
+      if (isNotEmpty(updatedFields)) {
         wingsPersistence.updateFields(AwsInfrastructureMapping.class, infrastructureMapping.getUuid(), updatedFields);
         log.info("{} name updated: {} from: {} to: {}", DEBUG_LINE, infrastructureMapping.getUuid(),
             infrastructureMapping.getName(), newName);
       }
 
     } catch (Exception ex) {
-      log.info("{} Failed to update name for {}", DEBUG_LINE, infrastructureMapping.getUuid());
+      log.warn("{} Failed to update name for {}", DEBUG_LINE, infrastructureMapping.getUuid(), ex);
     }
   }
 }

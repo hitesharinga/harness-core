@@ -8,10 +8,13 @@
 package io.harness.ng.trialsignup;
 
 public class ProvisionResponse {
-  enum Status {
+  enum SetupStatus {
     SUCCESS,
     DELEGATE_PROVISION_FAILURE,
     K8S_CONNECTOR_PROVISION_FAILURE,
     DOCKER_CONNECTOR_PROVISION_FAILURE,
+    INCOMPATIBLE_LICENSE
   }
+
+  enum DelegateStatus { SUCCESS, IN_PROGRESS, FAILURE }
 }

@@ -11,23 +11,30 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.gitsync.common.beans.InfoForGitPush;
+import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
+import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
+import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 
 import java.util.List;
@@ -47,6 +54,9 @@ public interface ScmClientFacilitatorService {
 
   FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef,
       String repoName, String branchName, String filePath, String commitId);
+
+  CreatePRResponse createPullRequest(
+      Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title);
 
   CreatePRDTO createPullRequest(GitPRCreateRequest gitCreatePRRequest);
 
@@ -82,5 +92,18 @@ public interface ScmClientFacilitatorService {
   CreateBranchResponse createBranch(InfoForGitPush infoForGitPush, String yamlGitConfigIdentifier);
 
   GetUserReposResponse listUserRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, PageRequestDTO pageRequest);
+      ScmConnector scmConnector, PageRequestDTO pageRequest);
+
+  ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ScmConnector scmConnector, PageRequestDTO pageRequest);
+
+  GetUserRepoResponse getRepoDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector);
+
+  CreateBranchResponse createNewBranch(
+      Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName);
+
+  CreateFileResponse createFile(CreateGitFileRequestDTO createGitFileRequestDTO);
+
+  UpdateFileResponse updateFile(UpdateGitFileRequestDTO updateGitFileRequestDTO);
 }

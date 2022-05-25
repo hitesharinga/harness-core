@@ -29,9 +29,11 @@ import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
+import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.IsLatestFileResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
@@ -113,6 +115,12 @@ public class SCMServiceGitClientImpl implements ScmClient {
   }
 
   @Override
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(
+      ScmConnector scmConnector, PageRequestDTO pageRequest) {
+    return scmServiceClient.listBranchesWithDefault(scmConnector, pageRequest, scmBlockingStub);
+  }
+
+  @Override
   public ListCommitsResponse listCommits(ScmConnector scmConnector, String branch) {
     return scmServiceClient.listCommits(scmConnector, branch, scmBlockingStub);
   }
@@ -183,5 +191,28 @@ public class SCMServiceGitClientImpl implements ScmClient {
   @Override
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest) {
     return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub);
+  }
+
+  @Override
+  public GetUserRepoResponse getRepoDetails(ScmConnector scmConnector) {
+    return scmServiceClient.getRepoDetails(scmConnector, scmBlockingStub);
+  }
+
+  @Override
+  public GetUserReposResponse getAllUserRepos(ScmConnector scmConnector) {
+    return scmServiceClient.getAllUserRepos(scmConnector, scmBlockingStub);
+  }
+
+  @Override
+  public CreateBranchResponse createNewBranchV2(
+      ScmConnector scmConnector, String newBranchName, String baseBranchName) {
+    return scmServiceClient.createNewBranchV2(scmConnector, newBranchName, baseBranchName, scmBlockingStub);
+  }
+
+  @Override
+  public CreatePRResponse createPullRequestV2(
+      ScmConnector scmConnector, String sourceBranchName, String targetBranchName, String prTitle) {
+    return scmServiceClient.createPullRequestV2(
+        scmConnector, sourceBranchName, targetBranchName, prTitle, scmBlockingStub);
   }
 }

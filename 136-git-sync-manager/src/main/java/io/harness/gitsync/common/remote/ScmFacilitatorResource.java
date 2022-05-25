@@ -21,13 +21,11 @@ import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.gitsync.GitPRCreateRequest;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.common.YamlConstants;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
+import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.SaasGitDTO;
@@ -59,6 +57,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -229,43 +228,6 @@ public class ScmFacilitatorResource {
         gitCreatePRRequest.getAccountIdentifier()));
   }
 
-  // API just for testing purpose, not exposed to customer
-  // TODO should be removed after testing @Mohit
-  @GET
-  @Path("get-file")
-  @ApiOperation(value = "get file", nickname = "getFile")
-  @Hidden
-  @Operation(operationId = "getFile", summary = "get file",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") },
-      hidden = true)
-  public ResponseDTO<GetFileResponse>
-  getFile(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @NotNull @QueryParam(
-              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Repo Name") @QueryParam("RepoName") @NotBlank @NotNull String repoName,
-      @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) @QueryParam(
-          YamlConstants.BRANCH) String branch,
-      @Parameter(description = "File Path") @QueryParam(YamlConstants.FILE_PATH) @NotBlank @NotNull String filePath,
-      @Parameter(description = "Commit Id") @QueryParam(YamlConstants.COMMIT_ID) String commitId,
-      @Parameter(description = "Connector Ref") @QueryParam("ConnectorRef") String connectorRef) {
-    return ResponseDTO.newResponse(
-        harnessToGitHelperService.getFile(GetFileRequest.newBuilder()
-                                              .setScopeIdentifiers(ScopeIdentifiers.newBuilder()
-                                                                       .setAccountIdentifier(accountIdentifier)
-                                                                       .setOrgIdentifier(orgIdentifier)
-                                                                       .setProjectIdentifier(projectIdentifier)
-                                                                       .build())
-                                              .setRepoName(repoName)
-                                              .setBranchName(branch)
-                                              .setFilePath(filePath)
-                                              .setCommitId(commitId)
-                                              .setConnectorRef(connectorRef)
-                                              .build()));
-  }
-
   @GET
   @Path("list-repos-by-connector")
   @ApiOperation(
@@ -290,12 +252,47 @@ public class ScmFacilitatorResource {
           GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
       @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
           "0") int pageNum,
-      @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue(
-          "50") int pageSize,
+      @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
+              + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
+      int pageSize,
       @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
     return ResponseDTO.newResponse(
         scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
             PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm));
+  }
+
+  @GET
+  @Path("list-branches")
+  @ApiOperation(value = "Lists Git Branches of given repo", nickname = "getListOfBranchesByRefConnectorV2")
+  @Hidden
+  @Operation(operationId = "getListOfBranchesByRefConnectorV2", summary = "Lists Git Branches of given repo",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "This contains paginated list of Git Branches of given repo.")
+      },
+      hidden = true)
+  public ResponseDTO<GitBranchesResponseDTO>
+  listBranches(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
+      @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
+          "0") int pageNum,
+      @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
+              + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
+      int pageSize,
+      @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
+    return ResponseDTO.newResponse(
+        scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            repoName, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm));
   }
 }

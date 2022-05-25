@@ -48,6 +48,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
+import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -83,6 +84,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExecutionHelper {
   PMSPipelineService pmsPipelineService;
+  PipelineMetadataService pipelineMetadataService;
   PMSPipelineServiceHelper pmsPipelineServiceHelper;
   TriggeredByHelper triggeredByHelper;
   PlanExecutionService planExecutionService;
@@ -153,12 +155,18 @@ public class ExecutionHelper {
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
 
       String pipelineYaml = getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+      BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
       StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
                                                     .isStagesExecution(false)
                                                     .pipelineYamlToRun(pipelineYaml)
-                                                    .allowStagesExecution(pipelineEntity.shouldAllowStageExecutions())
+                                                    .allowStagesExecution(basicPipeline.isAllowStageExecutions())
                                                     .build();
       if (EmptyPredicate.isNotEmpty(stagesToRun)) {
+        if (!basicPipeline.isAllowStageExecutions()) {
+          throw new InvalidRequestException(
+              String.format("Stage executions are not allowed for pipeline [%s]", basicPipeline.getIdentifier()));
+        }
+
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
         pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
         stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
@@ -177,7 +185,7 @@ public class ExecutionHelper {
           stagesExecutionInfo.getPipelineYamlToRun());
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
-      BasicPipeline basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
+      basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
           triggerInfo, pipelineEntity, executionId, retryExecutionInfo, basicPipeline.getNotificationRules());
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
@@ -189,15 +197,16 @@ public class ExecutionHelper {
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
       RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules) {
-    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
-                                            .setExecutionUuid(executionId)
-                                            .setTriggerInfo(triggerInfo)
-                                            .setModuleType(moduleType)
-                                            .setRunSequence(pmsPipelineService.incrementRunSequence(pipelineEntity))
-                                            .setPipelineIdentifier(pipelineIdentifier)
-                                            .setRetryInfo(retryExecutionInfo)
-                                            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-                                            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
+    ExecutionMetadata.Builder builder =
+        ExecutionMetadata.newBuilder()
+            .setExecutionUuid(executionId)
+            .setTriggerInfo(triggerInfo)
+            .setModuleType(moduleType)
+            .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
+            .setPipelineIdentifier(pipelineIdentifier)
+            .setRetryInfo(retryExecutionInfo)
+            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(pipelineEntity);
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);

@@ -29,6 +29,7 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import ch.qos.logback.classic.Level;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -97,8 +98,10 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "ceAzureSetupConfig") @ConfigSecret private CEAzureSetupConfig ceAzureSetupConfig;
   @JsonProperty(value = "awsConfig") @ConfigSecret private AwsConfig awsConfig;
 
-  @JsonProperty(value = "hostname") private String hostname;
-  @JsonProperty(value = "basePathPrefix") private String basePathPrefix;
+  @JsonProperty(value = "hostname") private String hostname = "localhost";
+  @JsonProperty(value = "basePathPrefix") private String basePathPrefix = "";
+  @JsonProperty(value = "awsConnectorCreatedInstantForPolicyCheck")
+  private String awsConnectorCreatedInstantForPolicyCheck;
 
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
 
@@ -148,7 +151,8 @@ public class CENextGenConfiguration extends Configuration {
     return logbackAccessRequestLogFactory;
   }
 
-  protected OpenAPIConfiguration getOasConfig() {
+  @JsonIgnore
+  public OpenAPIConfiguration getOasConfig() {
     OpenAPI oas = new OpenAPI();
     Info info =
         new Info()

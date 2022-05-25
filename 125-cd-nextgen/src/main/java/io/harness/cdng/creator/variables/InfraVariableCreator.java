@@ -7,9 +7,9 @@
 
 package io.harness.cdng.creator.variables;
 
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -60,7 +60,7 @@ public class InfraVariableCreator {
         .build();
   }
 
-  private static Map<String, YamlField> addDependencyForProvisionerSteps(YamlField provisionerField) {
+  public static Map<String, YamlField> addDependencyForProvisionerSteps(YamlField provisionerField) {
     Map<String, YamlField> stepsDependencyMap = new HashMap<>();
     List<YamlField> stepYamlFields = VariableCreatorHelper.getStepYamlFields(provisionerField);
     for (YamlField stepYamlField : stepYamlFields) {
@@ -111,6 +111,10 @@ public class InfraVariableCreator {
           addVariablesForKubernetesGcpInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.KUBERNETES_AZURE:
+          addVariablesForKubernetesAzureInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         case InfrastructureKind.PDC:
           addVariablesForPhysicalDataCenterInfra(infraDefNode, yamlPropertiesMap);
           break;
@@ -149,6 +153,21 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
   }
 
+  private void addVariablesForKubernetesAzureInfra(
+      YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.SUBSCRIPTION, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.RESOURCE_GROUP, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.NAMESPACE, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.RELEASE_NAME, infraSpecNode, yamlPropertiesMap);
+  }
+
   private static void addVariablesForPhysicalDataCenterInfra(
       YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
@@ -156,7 +175,7 @@ public class InfraVariableCreator {
       return;
     }
 
-    addVariableForYamlType(YamlTypes.SSH_KEY_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CREDENTIALS_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.HOSTS, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.ATTRIBUTE_FILTERS, infraSpecNode, yamlPropertiesMap);
