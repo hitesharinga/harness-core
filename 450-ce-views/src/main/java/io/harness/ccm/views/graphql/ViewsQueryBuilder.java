@@ -916,15 +916,17 @@ public class ViewsQueryBuilder {
   private void decorateQueryWithSharedCostAggregation(SelectQuery selectQuery, SharedCost sharedCost) {
     FunctionCall functionCall = getFunctionCallType(SUM);
     selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-        functionCall.addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(sharedCost.getRules())),
+        new CoalesceExpression(
+            functionCall.addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(sharedCost.getRules())),
+            Collections.singletonList(0)),
         modifyStringToComplyRegex(sharedCost.getName())));
   }
 
   private CustomSql getSQLCaseStatementBusinessMappingSharedCost(List<ViewRule> sharedCostRules) {
     CaseStatement caseStatement = new CaseStatement();
-    caseStatement.addWhen(getConsolidatedRuleCondition(sharedCostRules), ViewsMetaDataFields.COST.getAlias());
+    caseStatement.addWhen(
+        getConsolidatedRuleCondition(sharedCostRules), new CustomSql(ViewsMetaDataFields.COST.getAlias()));
     caseStatement.addElseNull();
-
     return new CustomSql(caseStatement);
   }
 
