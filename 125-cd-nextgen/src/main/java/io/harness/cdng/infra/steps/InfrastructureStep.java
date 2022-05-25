@@ -72,6 +72,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
@@ -322,7 +323,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @Override
   public List<String> getLogKeys(Ambiance ambiance) {
-    return Lists.newArrayList("Execute");
+    return StepUtils.generateLogKeys(ambiance, Lists.newArrayList("Execute"));
   }
 
   @Override
