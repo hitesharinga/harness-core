@@ -8,7 +8,6 @@
 package io.harness.steps.customstage;
 
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
-import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.steps.StepSpecTypeConstants;

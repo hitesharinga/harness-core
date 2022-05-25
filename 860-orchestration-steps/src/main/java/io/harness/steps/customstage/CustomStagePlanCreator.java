@@ -23,13 +23,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.inject.Inject;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomStageNode> {
