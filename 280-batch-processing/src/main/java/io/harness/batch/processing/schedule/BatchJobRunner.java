@@ -99,7 +99,6 @@ public class BatchJobRunner {
       endAt = Instant.now().minus(15, ChronoUnit.HOURS);
     }
     if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
-      startAt = Instant.now().minus(1, ChronoUnit.HOURS);
       endAt = Instant.now();
     }
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
