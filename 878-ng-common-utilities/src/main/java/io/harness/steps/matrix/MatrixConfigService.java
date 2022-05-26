@@ -29,14 +29,15 @@ public class MatrixConfigService implements StrategyConfigService {
     for (Map<String, String> combination : combinations) {
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
-                       .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                              .addAllMatrixCombination(matrixMetadata.get(currentIteration))
-                                              .putAllMatrixValues(combination)
-                                              .build())
-                       .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                                .setCurrentIteration(currentIteration)
-                                                .setTotalIterations(totalCount)
-                                                .build())
+                       .setStrategyMetadata(
+                           StrategyMetadata.newBuilder()
+                               .setCurrentIteration(currentIteration)
+                               .setTotalIterations(totalCount)
+                               .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                                      .addAllMatrixCombination(matrixMetadata.get(currentIteration))
+                                                      .putAllMatrixValues(combination)
+                                                      .build())
+                               .build())
                        .build());
       currentIteration++;
     }
