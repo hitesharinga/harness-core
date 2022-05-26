@@ -21,7 +21,7 @@ message InitiateNodeEvent {
 }
 
 enum InitiateMode {
-  UNKNOWN = 0;
+  UNKNOWN_MODE = 0;
   CREATE_AND_START = 1;
   CREATE = 2;
 }
