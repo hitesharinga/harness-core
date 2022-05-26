@@ -49,7 +49,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
-import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -93,10 +92,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                                                .setType(ExecutionNodeType.INFRASTRUCTURE.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  private static String INFRASTRUCTURE_COMMAND_UNIT = "Execute";
 
   @Inject private EnvironmentService environmentService;
-  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
@@ -124,13 +121,15 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
-    validateInfrastructure(infrastructure);
+    validateInfrastructure(infrastructure, ambiance);
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
+    saveExecutionLog(logCallback, String.format("Environment Name: %s", environmentOutcome.getName()));
+    saveExecutionLog(logCallback, String.format("Infrastructure Definition Type: %s", infrastructureOutcome.getKind()));
 
     publishInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     logCallback.saveExecutionLog("Completed infrastructure step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -142,7 +141,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                          .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
                          .build())
         .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
-                                                        .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
+                                                        .setUnitName("Execute")
                                                         .setStatus(UnitStatus.SUCCESS)
                                                         .setStartTime(startTime)
                                                         .setEndTime(System.currentTimeMillis())
@@ -151,7 +150,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -161,7 +159,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
           k8sInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
-      saveExecutionLog(logCallback, "Completing infrastructure step...");
     }
   }
 
@@ -174,6 +171,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     ConnectorInfoDTO connectorInfo = validateAndGetConnector(infrastructure.getConnectorReference(), ambiance);
+    saveExecutionLog(logCallback, String.format("Connector Name: %s", connectorInfo.getName()));
+    saveExecutionLog(logCallback, String.format("Connector Type: %s", connectorInfo.getConnectorType().name()));
 
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.getConnectorConfig() instanceof GcpConnectorDTO)) {
@@ -228,6 +227,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     if (!connectorDTO.isPresent()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
+    } else {
+      saveExecutionLog(logCallback, String.format("Connector Status: %s", connectorDTO.get().getStatus()));
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
     saveExecutionLog(logCallback, "Connector fetched");
@@ -236,7 +237,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   @VisibleForTesting
-  void validateInfrastructure(Infrastructure infrastructure) {
+  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance) {
+    String k8sNamespaceLogLine = "Kubernetes Namespace: %s";
+    NGLogCallback logCallback =
+        ambiance != null ? infrastructureStepHelper.getInfrastructureLogCallback(ambiance) : null;
     if (infrastructure == null) {
       throw new InvalidRequestException("Infrastructure definition can't be null or empty");
     }
@@ -244,12 +248,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         validateExpression(k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
+        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace()));
         break;
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
         validateExpression(k8sGcpInfrastructure.getConnectorRef(), k8sGcpInfrastructure.getNamespace(),
             k8sGcpInfrastructure.getCluster());
+        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace()));
         break;
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
@@ -263,6 +269,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(k8sAzureInfrastructure.getConnectorRef(), k8sAzureInfrastructure.getNamespace(),
             k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscriptionId(),
             k8sAzureInfrastructure.getResourceGroup());
+        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace()));
         break;
 
       case InfrastructureKind.SSH_WINRM_AZURE:

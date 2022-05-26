@@ -339,18 +339,18 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testValidateInfrastructure() {
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(null))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Infrastructure definition can't be null or empty");
 
     K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder = K8SDirectInfrastructure.builder();
-    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build());
+    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
 
     k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("connector"));
-    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build());
+    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
 
     k8SDirectInfrastructureBuilder.connectorRef(new ParameterField<>(null, true, "expression1", null, true));
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build()))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression1]");
   }
@@ -364,7 +364,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                            .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
                                            .build();
 
-    infrastructureStep.validateInfrastructure(infrastructure);
+    infrastructureStep.validateInfrastructure(infrastructure, null);
   }
 
   @Test
@@ -376,7 +376,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                            .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
                                            .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression1]");
   }
@@ -391,7 +391,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                            .connectorRef(new ParameterField<>(null, true, "expression2", null, true))
                                            .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expressions : [expression1] , [expression2]");
   }
@@ -407,7 +407,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .build();
 
-    infrastructureStep.validateInfrastructure(infrastructure);
+    infrastructureStep.validateInfrastructure(infrastructure, null);
   }
 
   @Test
@@ -422,7 +422,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resource-group"))
             .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression1]");
   }
@@ -439,7 +439,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resource-group"))
             .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression1]");
   }
@@ -456,7 +456,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resource-group"))
             .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression2]");
   }
@@ -473,7 +473,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .resourceGroup(new ParameterField<>(null, true, "expression2", null, true))
             .build();
 
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure))
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression2]");
   }
