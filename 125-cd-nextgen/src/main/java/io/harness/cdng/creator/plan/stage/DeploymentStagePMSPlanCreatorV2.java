@@ -168,11 +168,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       String infraSectionUuid = "service-" + UUIDGenerator.generateUuid();
       String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
 
-      //      Map<String, ByteString> serviceMetadataDependency = ServicePlanCreatorHelper.prepareMetadata(
-      //          serviceSpecNodeId, infraSectionUuid, environmentUuid, kryoSerializer);
-      //      Map<String, ByteString> environmentMetadataDependency = EnvironmentPlanCreatorHelper.prepareMetadata(
-      //          serviceSpecNodeId, infraSectionUuid, environmentUuid, kryoSerializer);
-
       // Spec node is also added in this method
       YamlField serviceField =
           addServiceDependency(planCreationResponseMap, specField, stageNode, ctx, environmentUuid, infraSectionUuid);
@@ -203,15 +198,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
 
-    //    if (infraField != null && environmentV2 != null) {
-    //      throw new InvalidRequestException("Infrastructure and Environment cannot be siblings of each other");
-    //    }
+    if (infraField != null && environmentV2 != null) {
+      throw new InvalidRequestException("Infrastructure and Environment cannot be siblings of each other");
+    }
 
     if (infraField == null && environmentV2 == null) {
       throw new InvalidRequestException("Infrastructure Or Environment section is missing");
     }
 
-    if (infraField == null) {
+    if (infraField != null) {
       // Adding infrastructure node
       PlanNode infraStepNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(
           pipelineInfrastructure.getInfrastructureDefinition().getSpec());

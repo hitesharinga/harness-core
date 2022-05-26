@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -30,15 +31,12 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Scanner;
-
-import io.harness.serializer.KryoSerializer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
-  @Inject
-  KryoSerializer kryoSerializer;
+  @Inject KryoSerializer kryoSerializer;
   @Inject DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   private YamlField getYamlFieldFromPath(String path) throws IOException {
