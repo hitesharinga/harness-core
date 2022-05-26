@@ -80,7 +80,6 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
@@ -98,7 +97,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @Inject private EnvironmentService environmentService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private InfrastructureSectionHelper infrastructureSectionHelper;
+  @Inject private InfrastructureStepHelper infrastructureStepHelper;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -121,7 +120,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance, true);
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true);
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
@@ -152,7 +151,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -168,7 +167,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
     saveExecutionLog(logCallback, "Validating connector...");
     if (infrastructure == null) {
       return;
@@ -215,7 +214,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   private ConnectorInfoDTO validateAndGetConnector(ParameterField<String> connectorRef, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureSectionHelper.getInfrastructureLogCallback(ambiance);
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
     saveExecutionLog(logCallback, "Fetching connector...");
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {
@@ -323,11 +322,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @Override
   public List<String> getLogKeys(Ambiance ambiance) {
-    return StepUtils.generateLogKeys(ambiance, Lists.newArrayList("Execute"));
-  }
-
-  @Override
-  public List<String> getCommandUnits(Ambiance ambiance) {
-    return Lists.newArrayList("Execute");
+    return StepUtils.generateLogKeys(ambiance, null);
   }
 }

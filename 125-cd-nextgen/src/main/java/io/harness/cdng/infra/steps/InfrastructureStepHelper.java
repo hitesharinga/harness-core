@@ -18,7 +18,7 @@ import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
-public class InfrastructureSectionHelper {
+public class InfrastructureStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance) {
@@ -26,6 +26,6 @@ public class InfrastructureSectionHelper {
   }
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, "Execute", shouldOpenStream);
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
   }
 }
