@@ -5,15 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.exception;
+package io.harness.delegate.beans.connector.jenkins;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eraro.ErrorCode;
 
-@OwnedBy(HarnessTeam.PL)
-public class ScmUnprocessableEntityException extends ScmException {
-  public ScmUnprocessableEntityException(String errorMessage) {
-    super(errorMessage, ErrorCode.SCM_UNPROCESSABLE_ENTITY);
-  }
+@OwnedBy(CDC)
+public class JenkinsConstant {
+  // auth types
+  public static final String USERNAME_PASSWORD = "UsernamePassword";
+  public static final String ANONYMOUS = "Anonymous";
+  public static final String BEARER_TOKEN = "Bearer Token(HTTP Header)";
 }

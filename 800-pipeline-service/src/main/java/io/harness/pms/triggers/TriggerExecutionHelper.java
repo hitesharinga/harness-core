@@ -149,7 +149,7 @@ public class TriggerExecutionHelper {
       String targetIdentifier = ngTriggerEntity.getTargetIdentifier();
 
       ByteString gitSyncBranchContextByteString;
-      if (isEmpty(ngTriggerEntity.getPipelineBranchName())
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         pipelineEntityToExecute = pmsPipelineService.get(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
@@ -173,11 +173,12 @@ public class TriggerExecutionHelper {
         SourcePrincipalContextBuilder.setSourcePrincipal(
             new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
         String branch = null;
-        if (isNotEmpty(ngTriggerEntity.getPipelineBranchName())) {
-          if (isBranchExpr(ngTriggerEntity.getPipelineBranchName())) {
-            branch = resolveBranchExpression(ngTriggerEntity.getPipelineBranchName(), triggerWebhookEvent);
+        if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+          if (isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+            branch = resolveBranchExpression(
+                triggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), triggerWebhookEvent);
           } else {
-            branch = ngTriggerEntity.getPipelineBranchName();
+            branch = triggerDetails.getNgTriggerConfigV2().getPipelineBranchName();
           }
         }
 
@@ -210,11 +211,17 @@ public class TriggerExecutionHelper {
                 .build();
         gitSyncBranchContextByteString =
             pmsGitSyncHelper.serializeGitSyncBranchContext(gitSyncContextWithRepoAndFilePath);
+
+        log.info(
+            "Triggering execution for pipeline with identifier:  {} , in org: {} , ProjectId: {} , accountIdentifier: {} , For Trigger: {},  in branch {}, repo {} , filePath {}",
+            ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+            ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getIdentifier(),
+            branch, pipelineEntityToExecute.get().getRepo(), pipelineEntityToExecute.get().getFilePath());
       }
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       String runtimeInputYaml = null;
-      if (isEmpty(ngTriggerEntity.getPipelineBranchName())
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
       } else {
@@ -453,7 +460,7 @@ public class TriggerExecutionHelper {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     NGTriggerConfigV2 triggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     String pipelineBranch = triggerConfigV2.getPipelineBranchName();
-    if (isEmpty(ngTriggerEntity.getInputSetRefs())) {
+    if (isEmpty(triggerConfigV2.getInputSetRefs())) {
       return null;
     }
 
