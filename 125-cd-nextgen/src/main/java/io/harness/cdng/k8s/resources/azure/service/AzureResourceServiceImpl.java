@@ -17,9 +17,12 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureTagDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureTagsDTO;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
@@ -29,6 +32,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +128,35 @@ public class AzureResourceServiceImpl implements AzureResourceService {
                       .stream()
                       .map(cluster -> AzureClusterDTO.builder().cluster(cluster).build())
                       .collect(Collectors.toList()))
+        .build();
+  }
+
+  @Override
+  public AzureTagsDTO getTags(
+      IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId) {
+    AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
+    BaseNGAccess baseNGAccess =
+        azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = azureHelperService.getEncryptionDetails(connector, baseNGAccess);
+
+    Map<AzureAdditionalParams, String> additionalParams =
+        Collections.singletonMap(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_TAGS)
+                                                    .azureConnector(connector)
+                                                    .encryptionDetails(encryptionDetails)
+                                                    .delegateSelectors(connector.getDelegateSelectors())
+                                                    .additionalParams(additionalParams)
+                                                    .build();
+
+    AzureTagsResponse tagsResponse = (AzureTagsResponse) azureHelperService.executeSyncTask(
+        azureTaskParamsTaskParams, baseNGAccess, "Azure list tags task failure due to error");
+    return AzureTagsDTO.builder()
+        .tags(tagsResponse.getTags()
+                  .stream()
+                  .map(tag -> AzureTagDTO.builder().tag(tag).build())
+                  .collect(Collectors.toList()))
         .build();
   }
 }

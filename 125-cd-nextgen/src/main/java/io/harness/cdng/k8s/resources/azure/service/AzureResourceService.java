@@ -13,6 +13,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureTagsDTO;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface AzureResourceService {
@@ -23,4 +24,7 @@ public interface AzureResourceService {
 
   AzureClustersDTO getClusters(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
       String subscriptionId, String resourceGroup);
+
+  AzureTagsDTO getTags(
+      IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId);
 }
