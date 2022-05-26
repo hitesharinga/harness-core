@@ -136,4 +136,14 @@ public class ServicePlanCreatorHelper {
       throw new InvalidRequestException("Invalid service yaml in stage - " + stageNode.getIdentifier(), e);
     }
   }
+
+  public static Map<String, ByteString> prepareMetadata(
+      String serviceSpecNodeId, String infraSectionUuid, String environmentUuid, KryoSerializer kryoSerializer) {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(
+        YamlTypes.SERVICE_SPEC_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+    metadataDependency.put(YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+    return metadataDependency;
+  }
 }

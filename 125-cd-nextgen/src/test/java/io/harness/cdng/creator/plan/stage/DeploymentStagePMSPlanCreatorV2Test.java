@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Scanner;
@@ -104,7 +105,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     deploymentStagePMSPlanCreator.addEnvironmentV2Dependency(
-        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2, false);
+        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2, false, new HashMap<>());
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     String key = planCreationResponseMap.keySet().iterator().next();
     assertThat(planCreationResponseMap.get(key).getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);

@@ -33,13 +33,12 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -128,5 +127,15 @@ public class EnvironmentPlanCreatorHelper {
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid environment yaml", e);
     }
+  }
+
+  public static Map<String, ByteString> prepareMetadata(
+      String serviceSpecNodeId, String infraSectionUuid, String environmentUuid, KryoSerializer kryoSerializer) {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
+    metadataDependency.put(
+        YamlTypes.INFRA_SECTION_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+    return metadataDependency;
   }
 }

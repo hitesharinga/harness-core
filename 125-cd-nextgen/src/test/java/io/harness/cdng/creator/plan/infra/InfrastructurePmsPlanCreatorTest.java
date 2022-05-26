@@ -66,7 +66,8 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
       throw new InvalidRequestException("Exception while parsing yaml");
     }
 
-    PlanNode planNode = InfrastructurePmsPlanCreator.planBuilderForInfraSection(yamlField.getNode()).build();
+    PlanNode planNode =
+        InfrastructurePmsPlanCreator.planBuilderForInfraSection(yamlField.getNode(), "infraSectionUuid").build();
     assertThat(planNode.getUuid()).isEqualTo(yamlField.getNode().getUuid());
     assertThat(planNode.getName()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_NAME);
     assertThat(planNode.getIdentifier()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER);

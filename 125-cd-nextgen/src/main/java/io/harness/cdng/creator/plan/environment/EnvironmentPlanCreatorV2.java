@@ -90,8 +90,10 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
       planCreationResponseMap.put(infraDefPlanNode.getUuid(),
           PlanCreationResponse.builder().node(infraDefPlanNode.getUuid(), infraDefPlanNode).build());
 
-      planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSection(
-          infraField.getNode(), infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializer));
+      String infraSectionUuid = (String) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.INFRA_SECTION_UUID).toByteArray());
+      planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV2(infraField.getNode(),
+          infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializer, infraSectionUuid));
     }
     return planCreationResponseMap;
   }
@@ -106,13 +108,16 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
         EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
 
     String serviceSpecNodeUuid = (String) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_SPEC).toByteArray());
+        ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
+
+    String uuid = (String) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ByteString advisorParameters = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
 
     return PlanNode.builder()
-        .uuid(ctx.getCurrentField().getNode().getUuid())
+        .uuid(uuid)
         .stepType(EnvironmentStepV2.STEP_TYPE)
         .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
         .identifier(YamlTypes.ENVIRONMENT_YAML)

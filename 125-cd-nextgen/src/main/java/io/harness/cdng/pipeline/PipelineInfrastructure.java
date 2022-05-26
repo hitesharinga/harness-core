@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.creator.plan.infrastructure.InfraSection;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
@@ -50,7 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = PipelineInfrastructureVisitorHelper.class)
 @TypeAlias("pipelineInfrastructure")
 @RecasterAlias("io.harness.cdng.pipeline.PipelineInfrastructure")
-public class PipelineInfrastructure implements StepParameters, InfraSection, Visitable {
+public class PipelineInfrastructure implements StepParameters, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
