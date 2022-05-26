@@ -21,8 +21,8 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class HarnessForConfigServiceTest extends NGCommonUtilitiesTestBase {
-  private HarnessForConfigService harnessForConfigService = new HarnessForConfigService();
+public class ForLoopStrategyConfigServiceTest extends NGCommonUtilitiesTestBase {
+  private ForLoopStrategyConfigService forLoopStrategyConfigService = new ForLoopStrategyConfigService();
 
   @Test
   @Owner(developers = SAHIL)
@@ -45,7 +45,7 @@ public class HarnessForConfigServiceTest extends NGCommonUtilitiesTestBase {
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
 
     List<ChildrenExecutableResponse.Child> children =
-        harnessForConfigService.fetchChildren(strategyConfig, "childNodeId");
+        forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId");
     assertThat(children.size()).isEqualTo(10);
   }
 }

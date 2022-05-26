@@ -21,7 +21,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
                                                .build();
 
   @Inject MatrixConfigService matrixConfigService;
-  @Inject HarnessForConfigService harnessForConfigService;
+  @Inject ForLoopStrategyConfigService forLoopStrategyConfigService;
 
   @Override
   public ChildrenExecutableResponse obtainChildren(
@@ -34,7 +34,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
       return ChildrenExecutableResponse.newBuilder()
-          .addAllChildren(harnessForConfigService.fetchChildren(
+          .addAllChildren(forLoopStrategyConfigService.fetchChildren(
               stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
           .build();
     }

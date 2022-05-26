@@ -8,7 +8,7 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HarnessForConfigService implements StrategyConfigService {
+public class ForLoopStrategyConfigService implements StrategyConfigService {
   @Override
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
     HarnessForConfig harnessForConfig = strategyConfig.getForConfig();
