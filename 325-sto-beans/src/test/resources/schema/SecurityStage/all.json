@@ -624,9 +624,6 @@
             },
             "podName": {
               "type": "string"
-            },
-            "runAsUser": {
-              "$ref": "#/definitions/ParameterFieldInteger"
             }
           }
         }
@@ -1053,6 +1050,9 @@
             "tags"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "buildArgs": {
               "oneOf": [
                 {
@@ -1156,6 +1156,19 @@
           "properties": {
             "account": {
               "type": "string"
+            },
+            "baseImageConnectorRefs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "buildArgs": {
               "oneOf": [
@@ -1477,6 +1490,9 @@
             "tags"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "buildArgs": {
               "oneOf": [
                 {
@@ -1889,10 +1905,6 @@
             "stageIdentifier": {
               "type": "string"
             },
-            "timeout": {
-              "type": "integer",
-              "format": "int32"
-            },
             "variables": {
               "type": "array",
               "items": {
@@ -2144,82 +2156,6 @@
     },
     "JsonNode": {
       "type": "object",
-      "properties": {
-        "array": {
-          "type": "boolean"
-        },
-        "bigDecimal": {
-          "type": "boolean"
-        },
-        "bigInteger": {
-          "type": "boolean"
-        },
-        "binary": {
-          "type": "boolean"
-        },
-        "boolean": {
-          "type": "boolean"
-        },
-        "containerNode": {
-          "type": "boolean"
-        },
-        "double": {
-          "type": "boolean"
-        },
-        "float": {
-          "type": "boolean"
-        },
-        "floatingPointNumber": {
-          "type": "boolean"
-        },
-        "int": {
-          "type": "boolean"
-        },
-        "integralNumber": {
-          "type": "boolean"
-        },
-        "long": {
-          "type": "boolean"
-        },
-        "missingNode": {
-          "type": "boolean"
-        },
-        "nodeType": {
-          "type": "string",
-          "enum": [
-            "ARRAY",
-            "BINARY",
-            "BOOLEAN",
-            "MISSING",
-            "NULL",
-            "NUMBER",
-            "OBJECT",
-            "POJO",
-            "STRING"
-          ]
-        },
-        "null": {
-          "type": "boolean"
-        },
-        "number": {
-          "type": "boolean"
-        },
-        "object": {
-          "type": "boolean"
-        },
-        "pojo": {
-          "type": "boolean"
-        },
-        "short": {
-          "type": "boolean"
-        },
-        "textual": {
-          "type": "boolean"
-        },
-        "valueNode": {
-          "type": "boolean"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "K8BuildJobEnvInfo": {
@@ -2236,7 +2172,10 @@
             "stepConnectorRefs": {
               "type": "object",
               "additionalProperties": {
-                "$ref": "#/definitions/ConnectorConversionInfo"
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ConnectorConversionInfo"
+                }
               }
             },
             "workDir": {
@@ -2323,6 +2262,9 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2349,6 +2291,23 @@
               "additionalProperties": {
                 "type": "string"
               }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "os": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Linux",
+                "Osx",
+                "Windows"
+              ]
             },
             {
               "type": "string",
@@ -2975,34 +2934,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldInteger": {
-      "type": "object",
-      "properties": {
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldListDependencyElement": {
       "type": "object",
       "properties": {
@@ -3608,6 +3539,9 @@
                 }
               ]
             },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -3674,6 +3608,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
             },
             "bucket": {
               "type": "string"
@@ -3924,6 +3861,22 @@
             "args": {
               "type": "string"
             },
+            "buildEnvironment": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Core",
+                    "Framework"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "buildTool": {
               "oneOf": [
                 {
@@ -3956,6 +3909,22 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "frameworkVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "5.0",
+                    "6.0"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
                 }
               ]
             },
@@ -3994,6 +3963,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "namespaces": {
+              "type": "string"
             },
             "outputVariables": {
               "oneOf": [
@@ -4123,6 +4095,9 @@
                 }
               ]
             },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -4203,6 +4178,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
             },
             "bucket": {
               "type": "string"
@@ -4552,6 +4530,9 @@
             "connectorRef"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -4698,7 +4679,8 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "ticketType"
+            "ticketType",
+            "useServiceNowTemplate"
           ],
           "properties": {
             "connectorRef": {
@@ -4765,7 +4747,8 @@
           "required": [
             "connectorRef",
             "ticketNumber",
-            "ticketType"
+            "ticketType",
+            "useServiceNowTemplate"
           ],
           "properties": {
             "connectorRef": {
@@ -5914,6 +5897,9 @@
             "target"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -5955,6 +5941,9 @@
             "sourcePath"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -6000,6 +5989,9 @@
             "sourcePath"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -6193,11 +6185,31 @@
     },
     "VmPoolYamlSpec": {
       "type": "object",
-      "required": [
-        "identifier"
-      ],
       "properties": {
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "identifier": {
+          "type": "string"
+        },
+        "os": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Linux",
+                "Osx",
+                "Windows"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "poolName": {
           "type": "string"
         }
       },

@@ -10,6 +10,7 @@ package io.harness.polling;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.ARTIFACTORY_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.DOCKER_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
+import static io.harness.polling.contracts.Type.ACR;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
@@ -42,7 +43,8 @@ import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingResponseInfc;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
-import io.harness.delegate.task.artifacts.artifactory.ArtifactoryDockerArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
@@ -54,6 +56,7 @@ import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.PollingType;
+import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
@@ -211,6 +214,13 @@ public class PollingResponseHandlerTest extends CategoryTest {
     testSuccessResponse(ARTIFACTORY, PollingType.ARTIFACT);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.BUHA)
+  @Category(UnitTests.class)
+  public void testSuccessAcrPollingResponseWithDelegateRebalance() {
+    testSuccessResponse(ACR, PollingType.ARTIFACT);
+  }
+
   private void testSuccessResponse(Type type, PollingType pollingType) {
     PollingDocument pollingDocument = getPollingDocumentFromType(type, null);
     PollingDelegateResponse delegateResponse = getPollingDelegateResponse(type, pollingType, true, 0, 1000, -1);
@@ -362,6 +372,9 @@ public class PollingResponseHandlerTest extends CategoryTest {
         artifactDelegateResponses =
             getArtifactoryArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
         break;
+      case ACR:
+        artifactDelegateResponses = getAcrArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
+        break;
       default:
         artifactDelegateResponses = getEcrArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
     }
@@ -408,10 +421,18 @@ public class PollingResponseHandlerTest extends CategoryTest {
     return IntStream.rangeClosed(startIndex, endIndex)
         .boxed()
         .map(i
-            -> ArtifactoryDockerArtifactDelegateResponse.builder()
+            -> ArtifactoryArtifactDelegateResponse.builder()
                    .sourceType(ARTIFACTORY_REGISTRY)
                    .tag(String.valueOf(i))
                    .build())
+        .collect(Collectors.toList());
+  }
+
+  private List<ArtifactDelegateResponse> getAcrArtifactDelegateResponseList(int startIndex, int endIndex) {
+    return IntStream.rangeClosed(startIndex, endIndex)
+        .boxed()
+        .map(i
+            -> AcrArtifactDelegateResponse.builder().sourceType(ArtifactSourceType.ACR).tag(String.valueOf(i)).build())
         .collect(Collectors.toList());
   }
 
@@ -449,6 +470,8 @@ public class PollingResponseHandlerTest extends CategoryTest {
         return getNexusRegistryPollingDocument(polledResponse);
       case ARTIFACTORY:
         return getArtifactoryRegistryPollingDocument(polledResponse);
+      case ACR:
+        return getAcrRegistryPollingDocument(polledResponse);
       default:
         return getEcrPollingDocument(polledResponse);
     }
@@ -509,6 +532,11 @@ public class PollingResponseHandlerTest extends CategoryTest {
     ArtifactoryRegistryArtifactInfo artifactoryRegistryArtifactInfo =
         ArtifactoryRegistryArtifactInfo.builder().artifactPath("imagePath").build();
     return getPollingDocument(polledResponse, artifactoryRegistryArtifactInfo, PollingType.ARTIFACT);
+  }
+
+  private PollingDocument getAcrRegistryPollingDocument(PolledResponse polledResponse) {
+    AcrArtifactInfo acrArtifactInfo = AcrArtifactInfo.builder().repository("imagePath").build();
+    return getPollingDocument(polledResponse, acrArtifactInfo, PollingType.ARTIFACT);
   }
 
   private PollingDocument getPollingDocument(

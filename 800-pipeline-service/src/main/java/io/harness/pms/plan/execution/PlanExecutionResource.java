@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.beans.FeatureName.NG_PIPELINE_TEMPLATE;
+
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
@@ -30,10 +32,13 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.ngpipeline.inputset.beans.resource.MergeInputSetRequestDTOPMS;
+import io.harness.pms.helpers.PmsFeatureFlagHelper;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
@@ -114,6 +119,8 @@ public class PlanExecutionResource {
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
+  @Inject private final PmsFeatureFlagHelper featureFlagService;
+  @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   @POST
   @Path("/{identifier}")
@@ -143,7 +150,7 @@ public class PlanExecutionResource {
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
       @ApiParam(hidden = true) @Parameter(
           description =
-              "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
+              "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Please refer to https://ngdocs.harness.io/article/f6yobn7iq0 and https://ngdocs.harness.io/article/1eishcolt3 to see how to generate Runtime Input YAML for a Pipeline.")
       String inputSetPipelineYaml) {
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false);
@@ -602,11 +609,26 @@ public class PlanExecutionResource {
           pipelineIdentifier, projectIdentifier, orgIdentifier));
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
-    if (!pipelineEntity.shouldAllowStageExecutions()) {
+    String yaml = pipelineEntity.getYaml();
+    if (featureFlagService.isEnabled(accountId, NG_PIPELINE_TEMPLATE)
+        && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
+      yaml = pipelineTemplateHelper
+                 .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
+                 .getMergedPipelineYaml();
+    }
+    boolean shouldAllowStageExecutions;
+    try {
+      BasicPipeline basicPipeline = YamlUtils.read(yaml, BasicPipeline.class);
+      shouldAllowStageExecutions = basicPipeline.isAllowStageExecutions();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage(), e);
+    }
+
+    if (!shouldAllowStageExecutions) {
       return ResponseDTO.newResponse(Collections.emptyList());
     }
-    List<StageExecutionResponse> stageExecutionResponse =
-        StageExecutionSelectorHelper.getStageExecutionResponse(pipelineEntity.getYaml());
+    List<StageExecutionResponse> stageExecutionResponse = StageExecutionSelectorHelper.getStageExecutionResponse(yaml);
+
     return ResponseDTO.newResponse(stageExecutionResponse);
   }
 

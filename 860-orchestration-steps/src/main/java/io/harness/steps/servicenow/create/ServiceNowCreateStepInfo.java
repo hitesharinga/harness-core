@@ -58,7 +58,9 @@ public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
 
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> useServiceNowTemplate;
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> useServiceNowTemplate;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> templateName;
   List<ServiceNowField> fields;
 
@@ -82,6 +84,8 @@ public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, 
         .connectorRef(connectorRef)
         .ticketType(ticketType)
         .fields(ServiceNowStepUtils.processServiceNowFieldsList(fields))
+        .templateName(templateName)
+        .useServiceNowTemplate(useServiceNowTemplate)
         .delegateSelectors(delegateSelectors)
         .build();
   }
@@ -91,5 +95,10 @@ public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, 
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

@@ -15,6 +15,7 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -66,7 +67,7 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
-  ParameterField<String> subscription;
+  ParameterField<String> subscriptionId;
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -78,11 +79,11 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @Override
   public InfraMapping getInfraMapping() {
     return K8sAzureInfraMapping.builder()
-        .gcpConnector(connectorRef.getValue())
+        .azureConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
-        .subscription(cluster.getValue())
-        .resourceGroup(cluster.getValue())
+        .subscription(subscriptionId.getValue())
+        .resourceGroup(resourceGroup.getValue())
         .build();
   }
 
@@ -93,7 +94,7 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
 
   @Override
   public String[] getInfrastructureKeyValues() {
-    return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue(), subscription.getValue(),
+    return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue(), subscriptionId.getValue(),
         resourceGroup.getValue()};
   }
 
@@ -118,8 +119,8 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
     if (!ParameterField.isNull(config.getReleaseName())) {
       resultantInfra = resultantInfra.withReleaseName(config.getReleaseName());
     }
-    if (!ParameterField.isNull(config.getSubscription())) {
-      resultantInfra = resultantInfra.withSubscription(config.getSubscription());
+    if (!ParameterField.isNull(config.getSubscriptionId())) {
+      resultantInfra = resultantInfra.withSubscriptionId(config.getSubscriptionId());
     }
     if (!ParameterField.isNull(config.getResourceGroup())) {
       resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());

@@ -22,6 +22,9 @@ import io.harness.persistence.HPersistence;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +74,7 @@ public class WorkloadRepositoryImpl implements WorkloadRepository {
                      .set(K8sWorkloadKeys.namespace, podInfo.getNamespace())
                      .set(K8sWorkloadKeys.uid, topLevelOwner.getUid())
                      .set(K8sWorkloadKeys.kind, topLevelOwner.getKind())
+                     .set(K8sWorkloadKeys.ttl, new Date(Instant.now().plus(90, ChronoUnit.DAYS).toEpochMilli()))
                      .set(K8sWorkloadKeys.labels, encodeDotsInKey(labelMap)),
                  HPersistence.upsertReturnNewOptions))
               != null);
@@ -100,6 +104,16 @@ public class WorkloadRepositoryImpl implements WorkloadRepository {
         .field(K8sWorkloadKeys.name)
         .in(workloadName)
         .order(Sort.descending(K8sWorkloadKeys.lastUpdatedAt))
+        .asList();
+  }
+
+  @Override
+  public List<K8sWorkload> getWorkloadByWorkloadUid(String accountId, String clusterId, Set<String> workloadUid) {
+    return hPersistence.createQuery(K8sWorkload.class, excludeAuthorityCount)
+        .filter(K8sWorkloadKeys.accountId, accountId)
+        .filter(K8sWorkloadKeys.clusterId, clusterId)
+        .field(K8sWorkloadKeys.uid)
+        .in(workloadUid)
         .asList();
   }
 

@@ -10,8 +10,8 @@ https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt
 
 package io.harness.signup.notification;
 
-import io.harness.Team;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -21,6 +21,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ public class SaasSignupNotificationHelper implements SignupNotificationHelper {
   private final SignupNotificationConfiguration notificationConfiguration;
   private final LoadingCache<EmailType, Boolean> cache;
 
+  @Inject
   public SaasSignupNotificationHelper(NotificationClient notificationClient,
       SignupNotificationTemplateLoader cacheLoader, SignupNotificationConfiguration notificationConfiguration) {
     this.notificationClient = notificationClient;

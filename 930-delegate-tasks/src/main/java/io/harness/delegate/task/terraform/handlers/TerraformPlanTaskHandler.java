@@ -86,6 +86,10 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
             CommandExecutionStatus.RUNNING);
       }
 
+      if (taskParameters.isTfModuleSourceInheritSSH()) {
+        terraformBaseHelper.configureCredentialsForModuleSource(taskParameters, conFileFileGitStore, logCallback);
+      }
+
       GitBaseRequest gitBaseRequestForConfigFile = terraformBaseHelper.getGitBaseRequestForConfigFile(
           taskParameters.getAccountId(), conFileFileGitStore, (GitConfigDTO) conFileFileGitStore.getGitConfigDTO());
 
@@ -142,7 +146,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
       CliResponse response = terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
 
-      logCallback.saveExecutionLog("Script execution finished with status: " + response.getCommandExecutionStatus(),
+      Integer detailedExitCode = response.getExitCode();
+      logCallback.saveExecutionLog(format("Script execution finished with status: %s, exit-code %d",
+                                       response.getCommandExecutionStatus(), detailedExitCode),
           INFO, CommandExecutionStatus.RUNNING);
 
       if (isNotEmpty(taskParameters.getVarFileInfos())) {
@@ -171,6 +177,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           .encryptedTfPlan(encryptedTfPlan)
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .stateFileId(uploadedTfStateFile)
+          .detailedExitCode(detailedExitCode)
           .build();
     }
   }
