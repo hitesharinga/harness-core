@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 
-@OwnedBy(HarnessTeam.GTM)
+@OwnedBy(HarnessTeam.STO)
 public interface STOModuleLicenseClient extends ModuleLicenseClient<STOModuleLicenseDTO> {
   @Override STOModuleLicenseDTO createTrialLicense(Edition edition, String accountId);
 }
