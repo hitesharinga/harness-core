@@ -228,7 +228,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     if (!connectorDTO.isPresent()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     } else {
-      saveExecutionLog(logCallback, String.format("Connector Status: %s", connectorDTO.get().getStatus()));
+      saveExecutionLog(
+          logCallback, String.format("Connector Status: %s", connectorDTO.get().getStatus().getStatus().name()));
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
     saveExecutionLog(logCallback, "Connector fetched");
@@ -248,14 +249,16 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         validateExpression(k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
-        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace()));
+        saveExecutionLog(
+            logCallback, String.format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()));
         break;
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
         validateExpression(k8sGcpInfrastructure.getConnectorRef(), k8sGcpInfrastructure.getNamespace(),
             k8sGcpInfrastructure.getCluster());
-        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace()));
+        saveExecutionLog(
+            logCallback, String.format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace().getValue()));
         break;
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
@@ -269,7 +272,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(k8sAzureInfrastructure.getConnectorRef(), k8sAzureInfrastructure.getNamespace(),
             k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscriptionId(),
             k8sAzureInfrastructure.getResourceGroup());
-        saveExecutionLog(logCallback, String.format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace()));
+        saveExecutionLog(
+            logCallback, String.format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace().getValue()));
         break;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
