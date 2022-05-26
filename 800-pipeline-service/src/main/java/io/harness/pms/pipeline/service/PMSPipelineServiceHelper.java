@@ -203,14 +203,8 @@ public class PMSPipelineServiceHelper {
     pipelineEntity.setTemplateReference(
         EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries()));
     if (checkAgainstOPAPolicies) {
-      String resolveTemplateRefsInPipelineWithOpaResponse =
-          templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
-      pmsYamlSchemaService.validateYamlSchema(
-          accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipelineWithOpaResponse);
-      // validate unique fqn in resolveTemplateRefsInPipeline
-      pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipelineWithOpaResponse);
       String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
-          accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipelineWithOpaResponse);
+          accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }
