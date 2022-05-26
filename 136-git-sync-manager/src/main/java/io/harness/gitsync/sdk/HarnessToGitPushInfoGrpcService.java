@@ -60,6 +60,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject KryoSerializer kryoSerializer;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
+  private String errorFormat = "Unexpected error occurred while %s git operation. Please contact Harness Support.";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -112,8 +113,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         getFileResponse = harnessToGitHelperService.getFileByBranch(request);
         log.info("Git Sync Service getFile ops response : {}", getFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during getFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, "get file");
+        log.error(errorMessage, ex);
         getFileResponse = GetFileResponse.newBuilder()
                               .setStatusCode(HTTP_500)
                               .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
@@ -138,8 +139,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         createFileResponse = harnessToGitHelperService.createFile(request);
         log.info("Git Sync Service createFile ops response : {}", createFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during createFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, "create file");
+        log.error(errorMessage, ex);
         createFileResponse = CreateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
                                  .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
@@ -164,8 +165,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         updateFileResponse = harnessToGitHelperService.updateFile(request);
         log.info("Git Sync Service updateFile ops response : {}", updateFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during updateFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, "update file");
+        log.error(errorMessage, ex);
         updateFileResponse = UpdateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
                                  .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
