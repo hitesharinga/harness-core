@@ -19,7 +19,6 @@ import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_NAME;
 import static software.wings.utils.WingsTestConstants.JIRA_CONNECTOR_ID;
-import static software.wings.utils.WingsTestConstants.JIRA_ISSUE_ID;
 import static software.wings.utils.WingsTestConstants.PASSWORD;
 import static software.wings.utils.WingsTestConstants.UUID;
 
@@ -675,7 +674,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldQueueDelegateTaskAndReturnExecutionResponse() {
     setUpMocksForEntireExecutionFlow();
-    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(false);
     ExecutionResponse expectedExecutionResponse =
         ExecutionResponse.builder()
             .async(true)
@@ -699,7 +698,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldQueueJiraUpdateTaskWithNGClient() {
     setUpMocksForEntireExecutionFlow();
-    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(true);
     when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
     jiraCreateUpdateState.setJiraAction(JiraAction.UPDATE_TICKET);
     jiraCreateUpdateState.setIssueType(ISSUE_TYPE);
@@ -727,7 +726,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldQueueJiraCreateTaskWithNGClient() {
     setUpMocksForEntireExecutionFlow();
-    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(true);
     when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
     jiraCreateUpdateState.setJiraAction(JiraAction.CREATE_TICKET);
     jiraCreateUpdateState.setIssueType(ISSUE_TYPE);
@@ -770,7 +769,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFailExecutionWhenIssueIdIsNotRendered() {
     setUpMocksForEntireExecutionFlow();
-    when(featureFlagService.isEnabled(eq(FeatureName.USE_NG_JIRA_CLIENT_IN_CG), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(false);
     jiraCreateUpdateState.setJiraAction(JiraAction.UPDATE_TICKET);
     jiraCreateUpdateState.setIssueId(StringUtils.EMPTY);
     when(context.renderExpression(StringUtils.EMPTY)).thenReturn(StringUtils.EMPTY);

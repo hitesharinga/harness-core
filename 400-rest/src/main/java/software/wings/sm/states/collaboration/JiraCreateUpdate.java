@@ -191,7 +191,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     JiraCreateMetaResponse createMeta = null;
     renderExpressions(context);
 
-    if (featureFlagService.isEnabled(FeatureName.USE_NG_JIRA_CLIENT_IN_CG, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA, accountId)) {
       if (jiraAction == JiraAction.UPDATE_TICKET) {
         jiraAction = JiraAction.UPDATE_TICKET_NG;
       } else if (jiraAction == JiraAction.CREATE_TICKET) {
