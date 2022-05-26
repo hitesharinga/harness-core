@@ -178,7 +178,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
     NGLogCallback logCallback =
-        infrastructureStepHelper != null ? infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true) : null;
+        infrastructureStepHelper != null ? infrastructureStepHelper.getInfrastructureLogCallback(ambiance) : null;
     saveExecutionLog(logCallback, "Validating connector...");
     if (infrastructure == null) {
       return;
@@ -236,7 +236,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   private ConnectorInfoDTO validateAndGetConnector(ParameterField<String> connectorRef, Ambiance ambiance) {
     NGLogCallback logCallback =
-        infrastructureStepHelper != null ? infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true) : null;
+        infrastructureStepHelper != null ? infrastructureStepHelper.getInfrastructureLogCallback(ambiance) : null;
     saveExecutionLog(logCallback, "Fetching connector...");
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {
