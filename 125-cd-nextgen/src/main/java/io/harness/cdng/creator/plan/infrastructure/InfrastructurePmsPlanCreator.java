@@ -147,8 +147,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public YamlField addResourceConstraintDependency(
-      YamlNode rbacSiblingNode, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
-    YamlField rcYamlField = constructResourceConstraintYamlField(rbacSiblingNode);
+      YamlNode rcStepSibilingNode, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+    YamlField rcYamlField = constructResourceConstraintYamlField(rcStepSibilingNode);
 
     try {
       YamlUpdates yamlUpdates =
