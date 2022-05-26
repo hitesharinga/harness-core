@@ -51,8 +51,8 @@ public class ServicePlanCreatorHelper {
     }
   }
 
-  public Dependencies getDependenciesForService(
-      YamlField serviceField, DeploymentStageNode stageNode, KryoSerializer kryoSerializer) {
+  public Dependencies getDependenciesForService(YamlField serviceField, DeploymentStageNode stageNode,
+      String environmentUuid, String infraSectionUuid, KryoSerializer kryoSerializer) {
     Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
     String serviceNodeUuid = serviceField.getNode().getUuid();
     serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
@@ -65,8 +65,10 @@ public class ServicePlanCreatorHelper {
       serviceDependencyMap.put(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS,
           ByteString.copyFrom(
               kryoSerializer.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
-      serviceDependencyMap.put(YamlTypes.ENVIRONMENT_NODE_ID,
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes("environment-" + infraConfig.getUuid())));
+      serviceDependencyMap.put(
+          YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+      serviceDependencyMap.put(
+          YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
@@ -146,5 +148,14 @@ public class ServicePlanCreatorHelper {
     metadataDependency.put(
         YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
     return metadataDependency;
+  }
+
+  public String fetchServiceSpecUuid(YamlField serviceField) {
+    return serviceField.getNode()
+        .getField(YamlTypes.SERVICE_DEFINITION)
+        .getNode()
+        .getField(YamlTypes.SERVICE_SPEC)
+        .getNode()
+        .getUuid();
   }
 }
