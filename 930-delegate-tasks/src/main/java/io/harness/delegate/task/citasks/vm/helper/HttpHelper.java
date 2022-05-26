@@ -100,7 +100,7 @@ public class HttpHelper {
     return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).poolOwner(poolId, null).execute());
   }
 
-  public boolean isPoolOwnerWithStageIdWithRetries(String poolId, String stageId) {
+  public boolean isPoolOwnerWithStageIdRetries(String poolId, String stageId) {
     RetryPolicy<Object> retryPolicy = getRetryPoolOwnerPolicy(
         "[Retrying failed to check pool owner; attempt: {}", "Failing to check pool owner after retrying {} times");
     return Failsafe.with(retryPolicy).get(() -> isPoolOwnerWithStageId(poolId, stageId));
