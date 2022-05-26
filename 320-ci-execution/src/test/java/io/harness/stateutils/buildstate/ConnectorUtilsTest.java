@@ -74,7 +74,6 @@ import retrofit2.Response;
 public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Inject CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
   @Mock CIFeatureFlagService featureFlagService;
-
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService secretManagerClientService;
   @InjectMocks ConnectorUtils connectorUtils;
@@ -339,7 +338,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
 
     when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
     when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
-
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder()
