@@ -827,13 +827,13 @@ public class K8sStepHelper extends CDStepHelper {
 
     try {
       if (responseData instanceof GitFetchResponse) {
-        unitProgressData = ((GitFetchResponse) responseData).getUnitProgressData();
+//        unitProgressData = ((GitFetchResponse) responseData).getUnitProgressData();
         return handleGitFetchFilesResponse(
             responseData, k8sStepExecutor, ambiance, stepElementParameters, k8sStepPassThroughData, k8sManifest);
       }
 
       if (responseData instanceof HelmValuesFetchResponse) {
-        unitProgressData = ((HelmValuesFetchResponse) responseData).getUnitProgressData();
+//        unitProgressData = ((HelmValuesFetchResponse) responseData).getUnitProgressData();
         return handleHelmValuesFetchResponse(
             responseData, k8sStepExecutor, ambiance, stepElementParameters, k8sStepPassThroughData, k8sManifest);
       }
