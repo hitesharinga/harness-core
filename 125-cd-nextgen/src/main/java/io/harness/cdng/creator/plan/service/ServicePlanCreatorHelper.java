@@ -65,6 +65,8 @@ public class ServicePlanCreatorHelper {
       serviceDependencyMap.put(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS,
           ByteString.copyFrom(
               kryoSerializer.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
+      serviceDependencyMap.put(YamlTypes.ENVIRONMENT_NODE_ID,
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes("environment-" + infraConfig.getUuid())));
     } // v2 serviceField
     else {
       serviceDependencyMap.put(
