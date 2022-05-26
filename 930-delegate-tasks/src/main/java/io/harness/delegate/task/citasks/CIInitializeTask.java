@@ -57,7 +57,7 @@ public class CIInitializeTask extends AbstractDelegateRunnableTask {
       CITaskExecutionResponse response = ciVmInitializeTaskHandler.executeTaskInternal(
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
       response.setDelegateMetaInfo(
-          DelegateMetaInfo.builder().hostName(getDelegateHostname()).id(getDelegateId()).build());
+          DelegateMetaInfo.builder().id(getDelegateId()).build());
       return response;
     } else {
       throw new CIStageExecutionException(
