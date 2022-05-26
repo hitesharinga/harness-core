@@ -143,7 +143,8 @@ public class ServicePlanCreatorHelper {
     metadataDependency.put(
         YamlTypes.SERVICE_SPEC_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
     metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
-    metadataDependency.put(YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+    metadataDependency.put(
+        YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
     return metadataDependency;
   }
 }
