@@ -46,11 +46,16 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.environment.beans.ServiceOverrideRequestDTO;
+import io.harness.ng.core.environment.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.mappers.ServiceOverridesMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.ServiceOverrideService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
@@ -133,6 +138,7 @@ public class EnvironmentResourceV2 {
   private final EnvironmentService environmentService;
   private final AccessControlClient accessControlClient;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  private final ServiceOverrideService serviceOverrideService;
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -443,6 +449,28 @@ public class EnvironmentResourceV2 {
     return ResponseDTO.newResponse(NGEnvironmentConfig.builder().build());
   }
 
+  @POST
+  @Path("/serviceOverrides")
+  @ApiOperation(value = "upsert a Service Override", nickname = "upsertServiceOverride")
+  @Operation(operationId = "upsertServiceOverride", summary = "Upsert",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Upserts a Service Override") },
+      hidden = true)
+  public ResponseDTO<ServiceOverrideResponseDTO>
+  upsertServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                            NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = "Details of the Service Override to be upserted")
+      @Valid ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
+    throwExceptionForNoRequestDTO(serviceOverrideRequestDTO);
+
+    NGServiceOverridesEntity serviceOverridesEntity =
+        ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
+        serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
+    // todo: env, service validation
+    NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
+    return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
+  }
+
   private List<EnvironmentResponse> filterEnvironmentResponseByPermissionAndId(
       List<AccessControlDTO> accessControlList, List<EnvironmentResponse> environmentList) {
     List<EnvironmentResponse> filteredAccessControlDtoList = new ArrayList<>();
@@ -461,6 +489,13 @@ public class EnvironmentResourceV2 {
     if (dto == null) {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier, type. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
+    }
+  }
+
+  private void throwExceptionForNoRequestDTO(ServiceOverrideRequestDTO dto) {
+    if (dto == null) {
+      throw new InvalidRequestException(
+          "No request body sent in the API. Following fields are required: name, orgIdentifier, projectIdentifier, environmentRef, serviceRef");
     }
   }
 }

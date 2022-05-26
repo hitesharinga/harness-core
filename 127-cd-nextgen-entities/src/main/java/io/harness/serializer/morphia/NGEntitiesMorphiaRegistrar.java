@@ -26,6 +26,7 @@ import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
@@ -38,6 +39,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Cluster.class);
     set.add(Environment.class);
     set.add(InfrastructureEntity.class);
+    set.add(NGServiceOverridesEntity.class);
   }
 
   @Override
